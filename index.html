@@ -255,10 +255,34 @@ function ensureNode(k){
     const rv=new Tone.Reverb({decay:8,wet:.7});s.connect(rv);rv.connect(g);s.triggerAttack("C2")
   }
   else if(k==="lofi"){
-    const rv=new Tone.Reverb({decay:3,wet:.5}),fl=new Tone.Filter(1200,"lowpass");rv.connect(fl);fl.connect(g);
-    const sy=new Tone.PolySynth(Tone.Synth,{maxPolyphony:8,options:{oscillator:{type:"triangle"},envelope:{attack:.3,decay:.8,sustain:.4,release:1.5},volume:-12}});sy.connect(rv);
-    const ch=[["D4","F4","A4","C5"],["G3","B3","D4","F4"],["C4","E4","G4","B4"],["A3","C4","E4","G4"]];
-    let i=0;const lp=new Tone.Loop(t=>{sy.triggerAttackRelease(ch[i%4],"2n",t);i++},"1m");
+    const rv=new Tone.Reverb({decay:3.5,wet:.55}),fl=new Tone.Filter(1100,"lowpass");rv.connect(fl);fl.connect(g);
+    const sy=new Tone.PolySynth(Tone.Synth,{maxPolyphony:8,options:{oscillator:{type:"triangle"},envelope:{attack:.35,decay:1,sustain:.35,release:1.8},volume:-13}});sy.connect(rv);
+    // 32-chord jazz progression: ii-V-I cycles through keys with extensions and color tones
+    const ch=[
+      // A section — Dm9 → G13 → Cmaj9 → Cmaj9 (classic ii-V-I in C)
+      ["D3","F3","A3","C4","E4"],["G3","B3","D4","F4","E4"],["C3","E3","G3","B3","D4"],["C3","E3","G3","B3","D4"],
+      // → Em9 → A13 → Dmaj9 → Dmaj9 (ii-V-I in D)
+      ["E3","G3","B3","D4","F#4"],["A3","C#4","E4","G4","F#4"],["D3","F#3","A3","C#4","E4"],["D3","F#3","A3","C#4","E4"],
+      // B section — Fm9 → Bb13 → Ebmaj9 → Ebmaj9 (ii-V-I in Eb)
+      ["F3","Ab3","C4","Eb4","G4"],["Bb3","D4","F4","Ab4","G4"],["Eb3","G3","Bb3","D4","F4"],["Eb3","G3","Bb3","D4","F4"],
+      // → Abmaj7 → Db9 → Gbmaj7 → Gbmaj7 (IV-bVII-bIII)
+      ["Ab3","C4","Eb4","G4"],["Db3","F3","Ab3","Cb4","Eb4"],["Gb3","Bb3","Db4","F4"],["Gb3","Bb3","Db4","F4"],
+      // C section — Cm9 → F13 → Bbmaj9 → Bbmaj9 (ii-V-I in Bb)
+      ["C3","Eb3","G3","Bb3","D4"],["F3","A3","C4","Eb4","D4"],["Bb2","D3","F3","A3","C4"],["Bb2","D3","F3","A3","C4"],
+      // → Am9 → D13 → Gmaj9 → Gmaj9 (ii-V-I in G)
+      ["A3","C4","E4","G4","B4"],["D3","F#3","A3","C4","B3"],["G3","B3","D4","F#4","A4"],["G3","B3","D4","F#4","A4"],
+      // D section — Bbm9 → Eb13 → Abmaj9 → Abmaj9 (ii-V-I in Ab)
+      ["Bb3","Db4","F4","Ab4","C5"],["Eb3","G3","Bb3","Db4","C4"],["Ab3","C4","Eb4","G4","Bb4"],["Ab3","C4","Eb4","G4","Bb4"],
+      // → Dm11 → G7#11 → Cmaj13 → Cmaj13 (return home with extensions)
+      ["D3","F3","A3","C4","G4"],["G3","B3","D4","F#4","E4"],["C3","E3","G3","B3","A4"],["C3","E3","G3","B3","A4"]
+    ];
+    let i=0;
+    // Humanize: slight velocity and timing variation
+    const lp=new Tone.Loop(t=>{
+      const vel=.45+Math.random()*.15;
+      sy.triggerAttackRelease(ch[i%32],"2n",t+Math.random()*.04,vel);
+      i++;
+    },"1m");
     Tone.getTransport().bpm.value=75;lp.start(0)
   }
   else if(k==="vinyl"){
@@ -379,20 +403,54 @@ function ensureNode(k){
     });
   }
   else if(k==="perc"){
-    // Soft percussion: muted kick + gentle shaker at slow tempo
-    const rv=new Tone.Reverb({decay:2.5,wet:.6});rv.connect(g);
-    const lp=new Tone.Filter(800,"lowpass");lp.connect(rv);
-    // Soft kick
-    const kick=new Tone.MembraneSynth({pitchDecay:.05,octaves:3,envelope:{attack:.005,decay:.25,sustain:0,release:.3},volume:-18});
-    kick.connect(lp);
-    // Shaker (filtered noise burst)
-    const shaker=new Tone.NoiseSynth({noise:{type:"white"},envelope:{attack:.002,decay:.08,sustain:0,release:.05},volume:-22});
-    const shakerF=new Tone.Filter({frequency:6000,type:"highpass"});shaker.connect(shakerF);shakerF.connect(rv);
-    // Pattern: kick on 1, shaker on offbeats
+    // Lo-fi boom-bap: muted kick, vinyl snare, ghost hat, shaker — humanized
+    const rv=new Tone.Reverb({decay:2,wet:.5});rv.connect(g);
+    const warmF=new Tone.Filter(700,"lowpass");warmF.connect(rv);
+    // Muted kick — deep, short, pillowy
+    const kick=new Tone.MembraneSynth({pitchDecay:.04,octaves:2.5,envelope:{attack:.005,decay:.2,sustain:0,release:.25},volume:-16});
+    kick.connect(warmF);
+    // Snare — noise burst through bandpass for that dusty lo-fi snap
+    const snare=new Tone.NoiseSynth({noise:{type:"pink"},envelope:{attack:.003,decay:.12,sustain:0,release:.08},volume:-20});
+    const snareBp=new Tone.Filter({frequency:1800,type:"bandpass",Q:.8});snare.connect(snareBp);snareBp.connect(rv);
+    // Closed hat — very quiet, high-freq tick
+    const hat=new Tone.NoiseSynth({noise:{type:"white"},envelope:{attack:.001,decay:.04,sustain:0,release:.02},volume:-26});
+    const hatHp=new Tone.Filter(7000,"highpass");const hatLp=new Tone.Filter(600,"lowpass");hat.connect(hatHp);hatHp.connect(hatLp);hatLp.connect(rv);
+    // Shaker — softer, wider
+    const shaker=new Tone.NoiseSynth({noise:{type:"white"},envelope:{attack:.005,decay:.06,sustain:0,release:.04},volume:-24});
+    const shakerF=new Tone.Filter({frequency:5000,type:"highpass"});shaker.connect(shakerF);shakerF.connect(rv);
     Tone.getTransport().bpm.value=75;
-    const kickLoop=new Tone.Loop(t=>{kick.triggerAttackRelease("C1","8n",t)},"2n");
-    const shakerLoop=new Tone.Loop(t=>{shaker.triggerAttackRelease("16n",t)},"4n");
-    kickLoop.start(0);shakerLoop.start("8n");
+    // 2-bar boom-bap pattern with ghost notes and swing
+    // Kick: 1, and-of-2, 1 (second bar), and-of-3
+    let beat=0;
+    const swing=.035; // subtle swing feel
+    const mainLoop=new Tone.Loop(t=>{
+      const b=beat%16; // 16 eighth-notes = 2 bars
+      const h=()=>Math.random()*.02; // humanize timing
+      // Kick pattern
+      if(b===0||b===3||b===8||b===11){
+        kick.triggerAttackRelease("C1","8n",t+h());
+      }
+      // Snare on 2 and 4 (beats 4,12 in eighth-notes) — ghosted
+      if(b===4||b===12){
+        const vel=.3+Math.random()*.15;
+        snare.triggerAttackRelease("16n",t+h()+swing);
+      }
+      // Ghost snare hits
+      if((b===6||b===14)&&Math.random()>.4){
+        snare.triggerAttackRelease("32n",t+h()+swing);
+      }
+      // Hat on every eighth note — varying velocity for groove
+      const hatVel=(b%2===0)?.15:.08+Math.random()*.05;
+      if(Math.random()>.15){// occasionally skip a hat for breath
+        hat.triggerAttackRelease("32n",t+h()+(b%2?swing:0));
+      }
+      // Shaker on upbeats
+      if(b%2===1&&Math.random()>.3){
+        shaker.triggerAttackRelease("32n",t+h()+swing);
+      }
+      beat++;
+    },"8n");
+    mainLoop.start(0);
   }
 
   nodes[k]={g}
