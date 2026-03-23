@@ -43,7 +43,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
 </head>
 <body>
 
-<!-- ═══ SPLASH ═══ -->
+<!-- SPLASH -->
 <div id="splash" class="screen active" onclick="enterFromSplash()" ontouchend="enterFromSplash()" style="cursor:pointer">
   <div class="blob" style="width:280px;height:280px;left:-60px;top:-40px;background:#9B7FD4"></div>
   <div class="blob" style="width:200px;height:200px;left:60%;top:60%;background:#D4727F;animation-delay:2s"></div>
@@ -55,7 +55,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
   </div>
 </div>
 
-<!-- ═══ HOME ═══ -->
+<!-- HOME -->
 <div id="home" class="screen">
   <div class="blob" style="width:240px;height:240px;left:-50px;top:-30px;background:#9B7FD4"></div>
   <div class="blob" style="width:170px;height:170px;left:65%;top:50%;background:#D4727F;animation-delay:2s"></div>
@@ -86,7 +86,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
   </div>
 </div>
 
-<!-- ═══ PAYWALL ═══ -->
+<!-- PAYWALL -->
 <div id="paywall" class="screen">
   <div class="blob" id="pwBlob1" style="width:280px;height:280px;left:-80px;top:15%"></div>
   <div class="blob" style="width:160px;height:160px;left:70%;top:55%;background:#D4727F;animation-delay:3s"></div>
@@ -109,7 +109,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
   </div>
 </div>
 
-<!-- ═══ PLAYER ═══ -->
+<!-- PLAYER -->
 <div id="player" class="screen">
   <div class="blob" id="plBlob1" style="width:260px;height:260px;left:-70px;top:8%"></div>
   <div class="blob" id="plBlob2" style="width:160px;height:160px;left:65%;top:50%;animation-delay:3s"></div>
@@ -142,13 +142,13 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
   </div>
 </div>
 
-<!-- ═══ FEEDBACK BAR ═══ -->
+<!-- FEEDBACK BAR -->
 <div id="feedbackBar" class="feedback-bar" style="display:none">
   <span style="font-size:11px;color:rgba(245,240,235,.4);font-family:inherit">testing Hush?</span>
   <button class="feedback-btn" onclick="openFeedback()">share feedback</button>
 </div>
 
-<!-- ═══ FEEDBACK MODAL ═══ -->
+<!-- FEEDBACK MODAL -->
 <div id="feedbackModal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:24px">
   <div style="background:linear-gradient(160deg,#1e1528,#1a1225);border-radius:24px;padding:28px 24px;max-width:380px;width:100%;border:1px solid rgba(155,127,212,.15);max-height:80vh;overflow-y:auto">
     <h3 style="font-size:20px;font-weight:400;margin-bottom:4px;text-align:center">share your thoughts</h3>
@@ -179,35 +179,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
 </div>
 
 <script>
-// ═══ iOS AUDIO BOOTSTRAP ═══
-// Create and unlock a raw AudioContext BEFORE Tone.js loads.
-// iOS requires: 1) context created from user gesture, 2) resume called synchronously,
-// 3) a buffer played to fully unlock. We store it globally for Tone.js to use.
-window._audioCtx=null;
-window._audioUnlocked=false;
-function _createAndUnlock(){
-  if(window._audioUnlocked)return;
-  if(!window._audioCtx){
-    const AC=window.AudioContext||window.webkitAudioContext;
-    window._audioCtx=new AC();
-  }
-  const ctx=window._audioCtx;
-  if(ctx.state==='suspended')ctx.resume();
-  // Play a silent buffer — iOS requires actual audio output to fully unlock
-  try{
-    const buf=ctx.createBuffer(1,1,ctx.sampleRate);
-    const src=ctx.createBufferSource();
-    src.buffer=buf;src.connect(ctx.destination);src.start(0);
-  }catch(e){}
-  if(ctx.state==='running')window._audioUnlocked=true;
-}
-</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
-<script>
-// ═══ PASS OUR UNLOCKED CONTEXT TO TONE.JS ═══
-if(window._audioCtx){Tone.setContext(window._audioCtx)}
-
-// ═══ MODES — expanded with new sounds & 3 new modes ═══
+// ─── DATA ───────────────────────────────────────────────────────────
 const MODES=[
   {id:"focus",name:"Focus",sub:"Quiet the noise",icon:"◎",grad:"linear-gradient(135deg,#E8DFF5,#C4B0F4)",ac:"#9B7FD4",tag:"ADHD-optimized",
     sounds:[{k:"brown",n:"Brown noise",e:"🌊",dv:.5},{k:"rain",n:"Gentle rain",e:"🌧",dv:0},{k:"binaural",n:"Focus pulse",e:"🧠",dv:0},{k:"lofi",n:"Lo-fi chords",e:"🎹",dv:0},{k:"cafe",n:"Cafe murmur",e:"☕",dv:0},{k:"vinyl",n:"Vinyl warmth",e:"💿",dv:0}]},
@@ -226,459 +198,552 @@ const MODES=[
   {id:"meltdown",name:"Recovery",sub:"Gently come back to yourself",icon:"◌",grad:"linear-gradient(135deg,#E0E4ED,#A8B0C8)",ac:"#7A84A0",tag:"Meltdown recovery",
     sounds:[{k:"brown",n:"Deep cocoon",e:"🫧",dv:.6},{k:"drone",n:"Gentle hum",e:"🌀",dv:.2},{k:"pink",n:"Soft wash",e:"☁️",dv:0},{k:"bowl",n:"Distant bowl",e:"🔔",dv:0},{k:"wind",n:"Slow breeze",e:"🍃",dv:0},{k:"heartbeat",n:"Calm pulse",e:"💓",dv:0}]}
 ];
+
 const TIMERS=[{l:"5m",m:5},{l:"15m",m:15},{l:"25m",m:25},{l:"45m",m:45},{l:"1hr",m:60},{l:"∞",m:0}];
 
-let curMode=null,playing=false,selTimer=5,timeLeft=null,timerInterval=null,audioStarted=false;
-const nodes={},vols={};
+// ─── STATE ──────────────────────────────────────────────────────────
+let curMode=null, playing=false, selTimer=5, timeLeft=null, timerInterval=null;
+const vols={}, soundCache={};
 
-// ═══ AUDIO ENGINE — Raw Web Audio API (iOS-safe) ═══
-// Tone.js Noise/Oscillator fails silently on iOS. We use raw Web Audio for all
-// sound sources and only keep Tone.js for Transport scheduling (lofi, heartbeat, bowl).
-
-function getCtx(){
-  if(window._audioCtx)return window._audioCtx;
-  const AC=window.AudioContext||window.webkitAudioContext;
-  window._audioCtx=new AC();
-  return window._audioCtx;
-}
-
-function unlockAudio(){
-  _createAndUnlock();
-  const ctx=getCtx();
-  if(ctx.state==='suspended')ctx.resume();
-}
-
-async function initAudio(){
-  unlockAudio();
-  const ctx=getCtx();
-  // Tell Tone.js to use our context
-  try{Tone.setContext(ctx)}catch(e){}
-  try{await Tone.start();audioStarted=true}catch(e){}
-  if(ctx.state==='suspended')await ctx.resume();
-}
-
-// Generate a looping noise buffer using raw Web Audio
-function makeNoiseBuf(ctx,type,seconds){
-  const sr=ctx.sampleRate;const len=sr*seconds;
-  const buf=ctx.createBuffer(2,len,sr);
-  for(let ch=0;ch<2;ch++){
-    const d=buf.getChannelData(ch);
-    if(type==='white'){for(let i=0;i<len;i++)d[i]=Math.random()*2-1}
-    else if(type==='pink'){
-      let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
-      for(let i=0;i<len;i++){
-        const w=Math.random()*2-1;
-        b0=0.99886*b0+w*0.0555179;b1=0.99332*b1+w*0.0750759;
-        b2=0.96900*b2+w*0.1538520;b3=0.86650*b3+w*0.3104856;
-        b4=0.55000*b4+w*0.5329522;b5=-0.7616*b5-w*0.0168980;
-        d[i]=(b0+b1+b2+b3+b4+b5+b6+w*0.5362)*0.11;b6=w*0.115926;
-      }
-    }
-    else if(type==='brown'){
-      let last=0;
-      for(let i=0;i<len;i++){last+=(Math.random()*2-1)*0.02;if(last>1)last=1;if(last<-1)last=-1;d[i]=last*3.5}
+// ─── WAV ENCODER ────────────────────────────────────────────────────
+function bufToWav(audioBuffer) {
+  const numCh = audioBuffer.numberOfChannels;
+  const sr = audioBuffer.sampleRate;
+  const len = audioBuffer.length;
+  const bps = 16;
+  const blockAlign = numCh * bps / 8;
+  const byteRate = sr * blockAlign;
+  const dataSize = len * blockAlign;
+  const buf = new ArrayBuffer(44 + dataSize);
+  const v = new DataView(buf);
+  function ws(o, s) { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); }
+  ws(0, 'RIFF');
+  v.setUint32(4, 36 + dataSize, true);
+  ws(8, 'WAVE');
+  ws(12, 'fmt ');
+  v.setUint32(16, 16, true);
+  v.setUint16(20, 1, true);
+  v.setUint16(22, numCh, true);
+  v.setUint32(24, sr, true);
+  v.setUint32(28, byteRate, true);
+  v.setUint16(32, blockAlign, true);
+  v.setUint16(34, bps, true);
+  ws(36, 'data');
+  v.setUint32(40, dataSize, true);
+  const chData = [];
+  for (let c = 0; c < numCh; c++) chData.push(audioBuffer.getChannelData(c));
+  let off = 44;
+  for (let i = 0; i < len; i++) {
+    for (let c = 0; c < numCh; c++) {
+      let s = Math.max(-1, Math.min(1, chData[c][i]));
+      s = s < 0 ? s * 0x8000 : s * 0x7FFF;
+      v.setInt16(off, s, true);
+      off += 2;
     }
   }
-  return buf;
+  return new Blob([buf], { type: 'audio/wav' });
 }
 
-function makeNoiseSource(ctx,type){
-  const buf=makeNoiseBuf(ctx,type,4);
-  const src=ctx.createBufferSource();
-  src.buffer=buf;src.loop=true;src.start(0);
-  return src;
+// ─── PINK NOISE HELPER (Voss-McCartney) ─────────────────────────────
+function genPink(length) {
+  const data = new Float32Array(length);
+  const R = 8;
+  const rv = new Float32Array(R);
+  let sum = 0;
+  for (let r = 0; r < R; r++) { rv[r] = Math.random() * 2 - 1; sum += rv[r]; }
+  for (let i = 0; i < length; i++) {
+    let k = i;
+    for (let r = 0; r < R; r++) {
+      if ((k & 1) === 0) { sum -= rv[r]; rv[r] = Math.random() * 2 - 1; sum += rv[r]; break; }
+      k >>= 1;
+    }
+    data[i] = (sum / R) * 0.5;
+  }
+  return data;
 }
 
-function ensureNode(k){
-  if(nodes[k])return;
-  const ctx=getCtx();
-  // Master gain for this sound — volume control
-  const g=ctx.createGain();g.gain.value=0;g.connect(ctx.destination);
+// ─── BROWN NOISE HELPER ─────────────────────────────────────────────
+function genBrown(length) {
+  const data = new Float32Array(length);
+  let val = 0;
+  for (let i = 0; i < length; i++) {
+    val += (Math.random() * 2 - 1) * 0.02;
+    if (val > 1) val = 1; if (val < -1) val = -1;
+    data[i] = val;
+  }
+  return data;
+}
 
-  if(k==="brown"){
-    const s=makeNoiseSource(ctx,'brown');
-    const f=ctx.createBiquadFilter();f.type='lowpass';f.frequency.value=800;
-    s.connect(f);f.connect(g);
-  }
-  else if(k==="pink"){
-    const s=makeNoiseSource(ctx,'pink');s.connect(g);
-  }
-  else if(k==="white"){
-    const s=makeNoiseSource(ctx,'white');
-    const f=ctx.createBiquadFilter();f.type='lowpass';f.frequency.value=2000;
-    s.connect(f);f.connect(g);
-  }
-  else if(k==="binaural"){
-    const l=ctx.createOscillator();l.type='sine';l.frequency.value=200;
-    const r=ctx.createOscillator();r.type='sine';r.frequency.value=240;
-    if(ctx.createStereoPanner){
-      const panL=ctx.createStereoPanner();panL.pan.value=-1;
-      const panR=ctx.createStereoPanner();panR.pan.value=1;
-      l.connect(panL);panL.connect(g);r.connect(panR);panR.connect(g);
-    }else{
-      // Fallback: no panning, both go to gain (still creates beat frequency)
-      l.connect(g);r.connect(g);
+// ─── OFFLINE RENDER ─────────────────────────────────────────────────
+async function renderSound(key) {
+  if (soundCache[key]) return soundCache[key];
+
+  const sr = 44100;
+  let dur, numCh = 1;
+  if (key === 'bowl' || key === 'lofi') dur = 16;
+  else if (key === 'heartbeat') dur = 2;
+  else dur = 6;
+  if (key === 'binaural') numCh = 2;
+
+  const ctx = new OfflineAudioContext(numCh, sr * dur, sr);
+
+  switch (key) {
+    case 'brown': {
+      const ab = ctx.createBuffer(1, sr * dur, sr);
+      ab.getChannelData(0).set(genBrown(sr * dur));
+      const src = ctx.createBufferSource(); src.buffer = ab;
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 800;
+      src.connect(lp); lp.connect(ctx.destination); src.start(0);
+      break;
     }
-    l.start();r.start();
-  }
-  else if(k==="drone"){
-    const osc=ctx.createOscillator();osc.type='sine';osc.frequency.value=65.41; // C2
-    const conv=ctx.createConvolver();
-    // Simple reverb impulse
-    const rl=ctx.sampleRate*3;const imp=ctx.createBuffer(2,rl,ctx.sampleRate);
-    for(let c=0;c<2;c++){const d=imp.getChannelData(c);for(let i=0;i<rl;i++)d[i]=(Math.random()*2-1)*Math.exp(-i/(ctx.sampleRate*1.2))}
-    conv.buffer=imp;
-    const wet=ctx.createGain();wet.gain.value=0.6;
-    const dry=ctx.createGain();dry.gain.value=0.4;
-    osc.connect(conv);conv.connect(wet);wet.connect(g);
-    osc.connect(dry);dry.connect(g);osc.start();
-  }
-  else if(k==="lofi"){
-    // Lo-fi chords using raw Web Audio oscillators + setInterval scheduling
-    const rv=ctx.createConvolver();
-    const rl=ctx.sampleRate*2;const imp=ctx.createBuffer(2,rl,ctx.sampleRate);
-    for(let c=0;c<2;c++){const d=imp.getChannelData(c);for(let i=0;i<rl;i++)d[i]=(Math.random()*2-1)*Math.exp(-i/(ctx.sampleRate*0.8))}
-    rv.buffer=imp;
-    const fl=ctx.createBiquadFilter();fl.type='lowpass';fl.frequency.value=1200;
-    rv.connect(fl);fl.connect(g);
-    const chords=[[293.66,349.23,440,523.25],[196,246.94,293.66,349.23],[261.63,329.63,392,493.88],[220,261.63,329.63,392]];
-    let ci=0;
-    function playChord(){
-      chords[ci%4].forEach(freq=>{
-        const o=ctx.createOscillator();o.type='triangle';o.frequency.value=freq;
-        const eg=ctx.createGain();eg.gain.value=0;
-        const now=ctx.currentTime;
-        eg.gain.setValueAtTime(0,now);eg.gain.linearRampToValueAtTime(0.06,now+0.3);
-        eg.gain.linearRampToValueAtTime(0.03,now+1.5);eg.gain.linearRampToValueAtTime(0,now+3);
-        o.connect(eg);eg.connect(rv);o.start(now);o.stop(now+3.5);
-      });ci++;
+    case 'pink': {
+      const ab = ctx.createBuffer(1, sr * dur, sr);
+      ab.getChannelData(0).set(genPink(sr * dur));
+      const src = ctx.createBufferSource(); src.buffer = ab;
+      src.connect(ctx.destination); src.start(0);
+      break;
     }
-    playChord();nodes[k]._lofiTimer=setInterval(playChord,4000);
-  }
-  else if(k==="vinyl"){
-    const s=makeNoiseSource(ctx,'white');
-    const f=ctx.createBiquadFilter();f.type='bandpass';f.frequency.value=800;f.Q.value=0.5;
-    s.connect(f);f.connect(g);
-  }
-  else if(k==="rain"){
-    const s=makeNoiseSource(ctx,'pink');
-    const f=ctx.createBiquadFilter();f.type='bandpass';f.frequency.value=3000;f.Q.value=0.3;
-    const lp2=ctx.createBiquadFilter();lp2.type='lowpass';lp2.frequency.value=5000;
-    // LFO on filter freq for rain variation
-    const lfo=ctx.createOscillator();lfo.type='sine';lfo.frequency.value=0.15;
-    const lfoG=ctx.createGain();lfoG.gain.value=1200;
-    lfo.connect(lfoG);lfoG.connect(f.frequency);lfo.start();
-    s.connect(f);f.connect(lp2);lp2.connect(g);
-  }
-  else if(k==="wind"){
-    const s=makeNoiseSource(ctx,'brown');
-    const f=ctx.createBiquadFilter();f.type='bandpass';f.frequency.value=600;f.Q.value=0.8;
-    const lfo=ctx.createOscillator();lfo.type='sine';lfo.frequency.value=0.08;
-    const lfoG=ctx.createGain();lfoG.gain.value=400;
-    lfo.connect(lfoG);lfoG.connect(f.frequency);lfo.start();
-    s.connect(f);f.connect(g);
-  }
-  else if(k==="heartbeat"){
-    // Heartbeat using raw Web Audio — two thumps per beat
-    const fl=ctx.createBiquadFilter();fl.type='lowpass';fl.frequency.value=120;fl.connect(g);
-    function thump(){
-      const now=ctx.currentTime;
-      // Double beat: lub-dub
-      [0,0.2].forEach(offset=>{
-        const o=ctx.createOscillator();o.type='sine';o.frequency.value=55;
-        const eg=ctx.createGain();eg.gain.value=0;
-        eg.gain.setValueAtTime(0,now+offset);
-        eg.gain.linearRampToValueAtTime(0.8,now+offset+0.02);
-        eg.gain.linearRampToValueAtTime(0,now+offset+0.3);
-        o.connect(eg);eg.connect(fl);o.start(now+offset);o.stop(now+offset+0.4);
+    case 'white': {
+      const ab = ctx.createBuffer(1, sr * dur, sr);
+      const d = ab.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      const src = ctx.createBufferSource(); src.buffer = ab;
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2000;
+      src.connect(lp); lp.connect(ctx.destination); src.start(0);
+      break;
+    }
+    case 'binaural': {
+      const merger = ctx.createChannelMerger(2);
+      const oscL = ctx.createOscillator(); oscL.type = 'sine'; oscL.frequency.value = 200;
+      const gL = ctx.createGain(); gL.gain.value = 0.5;
+      oscL.connect(gL); gL.connect(merger, 0, 0);
+      const oscR = ctx.createOscillator(); oscR.type = 'sine'; oscR.frequency.value = 240;
+      const gR = ctx.createGain(); gR.gain.value = 0.5;
+      oscR.connect(gR); gR.connect(merger, 0, 1);
+      merger.connect(ctx.destination);
+      oscL.start(0); oscR.start(0);
+      break;
+    }
+    case 'drone': {
+      const osc = ctx.createOscillator(); osc.type = 'sine'; osc.frequency.value = 65.41;
+      const g = ctx.createGain(); g.gain.value = 0.7;
+      osc.connect(g); g.connect(ctx.destination); osc.start(0);
+      break;
+    }
+    case 'vinyl': {
+      const ab = ctx.createBuffer(1, sr * dur, sr);
+      const d = ab.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      const src = ctx.createBufferSource(); src.buffer = ab;
+      const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 800; bp.Q.value = 0.5;
+      src.connect(bp); bp.connect(ctx.destination); src.start(0);
+      break;
+    }
+    case 'rain': {
+      const ab = ctx.createBuffer(1, sr * dur, sr);
+      ab.getChannelData(0).set(genPink(sr * dur));
+      const src = ctx.createBufferSource(); src.buffer = ab;
+      const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 3000; bp.Q.value = 0.3;
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 5000;
+      src.connect(bp); bp.connect(lp); lp.connect(ctx.destination); src.start(0);
+      break;
+    }
+    case 'wind': {
+      const ab = ctx.createBuffer(1, sr * dur, sr);
+      ab.getChannelData(0).set(genBrown(sr * dur));
+      const src = ctx.createBufferSource(); src.buffer = ab;
+      const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 600; bp.Q.value = 0.8;
+      src.connect(bp); bp.connect(ctx.destination); src.start(0);
+      break;
+    }
+    case 'cafe': {
+      const ab = ctx.createBuffer(1, sr * dur, sr);
+      ab.getChannelData(0).set(genPink(sr * dur));
+      const src = ctx.createBufferSource(); src.buffer = ab;
+      const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1200; bp.Q.value = 0.4;
+      src.connect(bp); bp.connect(ctx.destination); src.start(0);
+      break;
+    }
+    case 'crackling': {
+      const ab = ctx.createBuffer(1, sr * dur, sr);
+      const d = ab.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() > 0.97 ? (Math.random() * 2 - 1) : 0;
+      const src = ctx.createBufferSource(); src.buffer = ab;
+      const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2500; bp.Q.value = 1;
+      src.connect(bp); bp.connect(ctx.destination); src.start(0);
+      break;
+    }
+    case 'heartbeat': {
+      const beats = [0, 0.2, 1.0, 1.2];
+      beats.forEach(t => {
+        const osc = ctx.createOscillator(); osc.type = 'sine'; osc.frequency.value = 55;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(0.8, t + 0.02);
+        g.gain.linearRampToValueAtTime(0, t + 0.3);
+        osc.connect(g); g.connect(ctx.destination);
+        osc.start(t); osc.stop(t + 0.35);
       });
+      break;
     }
-    thump();nodes[k]._hbTimer=setInterval(thump,1000);
-  }
-  else if(k==="crackling"){
-    const s=makeNoiseSource(ctx,'white');
-    const f=ctx.createBiquadFilter();f.type='bandpass';f.frequency.value=2500;f.Q.value=2;
-    const ag=ctx.createGain();ag.gain.value=0;
-    // Modulate gain for crackle bursts
-    const lfo=ctx.createOscillator();lfo.type='square';lfo.frequency.value=6;
-    const lfoG=ctx.createGain();lfoG.gain.value=0.8;
-    const lfo2=ctx.createOscillator();lfo2.type='sine';lfo2.frequency.value=0.5;
-    const lfo2G=ctx.createGain();lfo2G.gain.value=5;
-    lfo2.connect(lfo2G);lfo2G.connect(lfo.frequency);
-    lfo.connect(lfoG);lfoG.connect(ag.gain);
-    lfo.start();lfo2.start();
-    s.connect(f);f.connect(ag);ag.connect(g);
-  }
-  else if(k==="bowl"){
-    // Singing bowl using raw Web Audio
-    const rv=ctx.createConvolver();
-    const rl=ctx.sampleRate*5;const imp=ctx.createBuffer(2,rl,ctx.sampleRate);
-    for(let c=0;c<2;c++){const d=imp.getChannelData(c);for(let i=0;i<rl;i++)d[i]=(Math.random()*2-1)*Math.exp(-i/(ctx.sampleRate*2))}
-    rv.buffer=imp;rv.connect(g);
-    const freqs=[392,493.88,587.33,783.99];let bi=0;
-    function ring(){
-      const now=ctx.currentTime;const freq=freqs[bi%4];bi++;
-      const o=ctx.createOscillator();o.type='sine';o.frequency.value=freq;
-      const eg=ctx.createGain();eg.gain.value=0;
-      eg.gain.setValueAtTime(0,now);eg.gain.linearRampToValueAtTime(0.15,now+1);
-      eg.gain.linearRampToValueAtTime(0.05,now+4);eg.gain.linearRampToValueAtTime(0,now+7);
-      o.connect(eg);eg.connect(rv);o.start(now);o.stop(now+7.5);
+    case 'bowl': {
+      const freqs = [392, 493.88, 587.33, 783.99];
+      const times = [0, 4, 8, 12];
+      freqs.forEach((f, idx) => {
+        const osc = ctx.createOscillator(); osc.type = 'sine'; osc.frequency.value = f;
+        const g = ctx.createGain();
+        const t = times[idx];
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(0.4, t + 0.3);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 3.8);
+        osc.connect(g); g.connect(ctx.destination);
+        osc.start(t); osc.stop(t + 4);
+      });
+      break;
     }
-    ring();nodes[k]._bowlTimer=setInterval(ring,8000);
+    case 'lofi': {
+      const chords = [
+        [293.66, 349.23, 440, 523.25],
+        [196, 246.94, 293.66, 349.23],
+        [261.63, 329.63, 392, 493.88],
+        [220, 261.63, 329.63, 392]
+      ];
+      const times = [0, 4, 8, 12];
+      chords.forEach((chord, ci) => {
+        const t = times[ci];
+        chord.forEach(freq => {
+          const osc = ctx.createOscillator(); osc.type = 'triangle'; osc.frequency.value = freq;
+          const g = ctx.createGain();
+          g.gain.setValueAtTime(0, t);
+          g.gain.linearRampToValueAtTime(0.15, t + 0.5);
+          g.gain.linearRampToValueAtTime(0.12, t + 2.5);
+          g.gain.exponentialRampToValueAtTime(0.001, t + 3.9);
+          osc.connect(g); g.connect(ctx.destination);
+          osc.start(t); osc.stop(t + 4);
+        });
+      });
+      break;
+    }
   }
-  else if(k==="cafe"){
-    const s1=makeNoiseSource(ctx,'pink');
-    const f1=ctx.createBiquadFilter();f1.type='bandpass';f1.frequency.value=1200;f1.Q.value=0.4;
-    const s2=makeNoiseSource(ctx,'white');
-    const f2=ctx.createBiquadFilter();f2.type='bandpass';f2.frequency.value=3000;f2.Q.value=1.5;
-    const g2=ctx.createGain();g2.gain.value=0.15;
-    s1.connect(f1);f1.connect(g);
-    s2.connect(f2);f2.connect(g2);g2.connect(g);
-  }
 
-  nodes[k]={g}
+  const rendered = await ctx.startRendering();
+  const wavBlob = bufToWav(rendered);
+  const blobUrl = URL.createObjectURL(wavBlob);
+  const audio = new Audio(blobUrl);
+  audio.loop = true;
+  audio.volume = 0;
+  soundCache[key] = { audio, blobUrl };
+  return soundCache[key];
 }
 
-function setVol(k,v){
-  vols[k]=v;
-  if(!nodes[k])return;
-  // Direct value set — most reliable across all platforms
-  try{nodes[k].g.gain.value=v}catch(e){}
-}
-function startTransport(){if(Tone.getTransport().state!=="started")Tone.getTransport().start()}
-function stopAll(){
-  Object.keys(nodes).forEach(k=>{try{nodes[k].g.gain.value=0}catch(e){}});
-  try{Tone.getTransport().stop()}catch(e){}
-  playing=false;clearInterval(timerInterval);timeLeft=null;updatePlayUI()
+// ─── NAVIGATION ─────────────────────────────────────────────────────
+let splashDone = false;
+function enterFromSplash() {
+  if (splashDone) return;
+  splashDone = true;
+  showScreen('home');
 }
 
-// ═══ SCREENS ═══
-function showScreen(id){
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
-  // Show feedback bar on home and player screens
-  document.getElementById('feedbackBar').style.display=(id==='home'||id==='player')?'flex':'none';
+  document.getElementById('feedbackBar').style.display = (id === 'home' || id === 'player') ? 'flex' : 'none';
 }
 
-// ═══ HOME ═══
-function getGreeting(){
-  const h=new Date().getHours();
-  if(h<5)return"still up?";if(h<12)return"good morning";if(h<17)return"good afternoon";if(h<21)return"good evening";return"winding down?"
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 5) return 'good night';
+  if (h < 12) return 'good morning';
+  if (h < 17) return 'good afternoon';
+  return 'good evening';
 }
 
-function buildHome(){
-  document.getElementById('greeting').textContent=getGreeting();
-  const g=document.getElementById('modeGrid');g.innerHTML='';
-  MODES.forEach((m,i)=>{
-    const d=document.createElement('div');d.className='mode-card';d.style.background=m.grad;
-    d.style.animation=`sU .5s ease-out ${.08+i*.06}s both`;
-    d.innerHTML=`<div class="tag" style="color:${m.ac};background:${m.ac}15;align-self:flex-start;margin-bottom:8px">${m.tag}</div>
-      <div style="font-size:15px;font-weight:500;color:${m.ac}">${m.name.toLowerCase()}</div>
-      <div style="font-size:10px;color:${m.ac}90;margin-top:3px;line-height:1.3;font-style:italic">${m.sub}</div>
-      <div style="position:absolute;right:12px;bottom:10px;font-size:24px;color:${m.ac}25">${m.icon}</div>
-      ${m.pro?`<div style="position:absolute;top:10px;right:10px;font-size:8px;color:${m.ac};background:${m.ac}18;padding:2px 6px;border-radius:4px;font-family:system-ui;font-weight:600">PRO</div>`:''}`;
-    d.onclick=()=>openMode(i);g.appendChild(d)
-  })
+// ─── HOME ───────────────────────────────────────────────────────────
+function buildHome() {
+  document.getElementById('greeting').textContent = getGreeting();
+  const grid = document.getElementById('modeGrid');
+  grid.innerHTML = '';
+  MODES.forEach((m, i) => {
+    const d = document.createElement('div');
+    d.className = 'mode-card';
+    d.style.background = m.grad;
+    d.style.animation = `fU .6s ease-out ${0.15 + i * 0.05}s both`;
+    d.onclick = () => openMode(i);
+    d.innerHTML = `
+      <div style="font-size:24px;margin-bottom:6px;opacity:.7">${m.icon}</div>
+      <div style="color:#1a1520;font-size:14px;font-weight:500;margin-bottom:2px">${m.name}</div>
+      <div style="color:rgba(26,21,32,.5);font-size:11px;margin-bottom:8px">${m.sub}</div>
+      <div class="tag" style="background:rgba(26,21,32,.08);color:rgba(26,21,32,.5);margin-top:auto">${m.tag}</div>
+      ${m.pro ? '<div class="tag" style="background:rgba(26,21,32,.12);color:rgba(26,21,32,.6);position:absolute;top:10px;right:10px">PRO</div>' : ''}
+    `;
+    grid.appendChild(d);
+  });
 }
 
-function openMode(i){
-  curMode=MODES[i];
-  if(curMode.pro){showPaywall();return}
-  enterPlayer()
+// ─── MODE SELECTION ─────────────────────────────────────────────────
+function openMode(i) {
+  const m = MODES[i];
+  if (m.pro) { showPaywall(m); } else { enterPlayer(m); }
 }
 
-function showPaywall(){
-  const m=curMode;
-  document.getElementById('pwBlob1').style.background=m.ac;
-  document.getElementById('pwOrb').style.background=`radial-gradient(circle at 35% 35%,${m.ac}60,${m.ac})`;
-  document.getElementById('pwOrb').style.boxShadow=`0 0 50px ${m.ac}35`;
-  document.getElementById('pwTitle').textContent='unlock '+m.name.toLowerCase();
-  document.getElementById('pwSub').textContent=m.sub;
-  document.getElementById('pwCta').style.background=m.ac;
-  document.getElementById('pwCta').style.boxShadow=`0 8px 28px ${m.ac}40`;
-  const feats=["Cycle-synced sound therapy","Period pain relief tones","Guided breathing overlays","Unlimited sound mixing","Personal sound profile"];
-  document.getElementById('pwFeatures').innerHTML=feats.map(f=>`<div class="check"><div style="width:22px;height:22px;border-radius:50%;background:${m.ac}20;display:flex;align-items:center;justify-content:center;font-size:10px;color:${m.ac};flex-shrink:0">✓</div><span style="font-size:13px;color:rgba(245,240,235,.7)">${f}</span></div>`).join('');
-  showScreen('paywall')
+function showPaywall(m) {
+  curMode = m;
+  document.getElementById('pwBlob1').style.background = m.ac;
+  document.getElementById('pwOrb').style.background = `radial-gradient(circle at 35% 35%, ${m.ac}88, ${m.ac})`;
+  document.getElementById('pwTitle').textContent = m.name;
+  document.getElementById('pwSub').textContent = m.sub;
+  document.getElementById('pwCta').style.background = `linear-gradient(135deg, ${m.ac}, ${m.ac}cc)`;
+  const feat = document.getElementById('pwFeatures');
+  feat.innerHTML = '';
+  [{icon:'✧',text:'Full sound library with premium layers'},
+   {icon:'◎',text:'Cycle-synced sound recommendations'},
+   {icon:'◐',text:'Binaural beats & pain relief frequencies'},
+   {icon:'◉',text:'Unlimited timer & background play'}].forEach(f => {
+    const row = document.createElement('div');
+    row.className = 'check';
+    row.innerHTML = `<div style="width:28px;height:28px;border-radius:50%;background:${m.ac}15;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">${f.icon}</div><div style="font-size:13px;color:rgba(245,240,235,.6)">${f.text}</div>`;
+    feat.appendChild(row);
+  });
+  showScreen('paywall');
 }
-function enterPlayerFromPw(){enterPlayer()}
 
-function enterPlayer(){
-  const m=curMode;
-  Object.keys(nodes).forEach(k=>{try{nodes[k].g.gain.value=0}catch(e){}});
-  m.sounds.forEach(s=>{vols[s.k]=s.dv});
-  playing=false;timeLeft=null;clearInterval(timerInterval);
+function enterPlayerFromPw() { enterPlayer(curMode); }
 
-  const pl=document.getElementById('player');
-  pl.style.setProperty('--ac',m.ac);
-  document.getElementById('plBlob1').style.background=m.ac;
-  document.getElementById('plBlob2').style.background=m.ac;
-  document.getElementById('plTag').textContent=m.tag;
-  document.getElementById('plTag').style.cssText=`font-size:9px;color:${m.ac};background:${m.ac}12;padding:4px 10px;border-radius:8px;font-family:system-ui;font-weight:600;letter-spacing:.05em`;
-  document.getElementById('plOrb').style.background=`radial-gradient(circle at 40% 35%,${m.ac}60,${m.ac}40,${m.ac}10)`;
-  document.getElementById('plName').textContent=m.name.toLowerCase();
+// ─── PLAYER ─────────────────────────────────────────────────────────
+function enterPlayer(m) {
+  curMode = m;
+  playing = false;
+  m.sounds.forEach(s => { if (!(s.k in vols)) vols[s.k] = s.dv; });
 
-  const sc=document.getElementById('plSounds');sc.innerHTML='';
-  m.sounds.forEach(s=>{
-    const v=vols[s.k]||0;const on=v>0;
-    const row=document.createElement('div');row.className='snd-row'+(on?' on':'');row.id='sr-'+s.k;
-    row.innerHTML=`<span style="font-size:20px;width:28px;text-align:center;filter:${on?'none':'grayscale(1) opacity(.35)'};transition:filter .3s">${s.e}</span>
-      <div style="flex:1"><div style="font-size:12px;font-weight:500;color:${on?'#F5F0EB':'rgba(245,240,235,.3)'};transition:color .3s">${s.n}</div>
-      <input type="range" min="0" max="100" value="${Math.round(v*100)}" oninput="onSlider('${s.k}',this.value,${MODES.indexOf(m)})" style="background:linear-gradient(to right,${m.ac} ${v*100}%,rgba(255,255,255,.08) ${v*100}%)"></div>
-      <div style="font-size:10px;color:${on?m.ac:'rgba(245,240,235,.2)'};min-width:28px;text-align:right;font-family:system-ui;font-weight:500" id="vl-${s.k}">${Math.round(v*100)}%</div>`;
-    sc.appendChild(row)
+  document.getElementById('plBlob1').style.background = m.ac;
+  document.getElementById('plBlob2').style.background = m.ac + '66';
+  document.getElementById('plOrb').style.background = `radial-gradient(circle at 35% 35%, ${m.ac}88, ${m.ac})`;
+  document.getElementById('plOrbRing').style.borderColor = m.ac + '33';
+  document.getElementById('plName').textContent = m.name;
+  document.getElementById('plTag').textContent = m.tag;
+  document.getElementById('plTag').style.background = m.ac + '18';
+  document.getElementById('plTag').style.color = m.ac;
+  document.getElementById('plPulse').style.background = m.ac;
+  document.documentElement.style.setProperty('--ac', m.ac);
+
+  // Sound rows
+  const container = document.getElementById('plSounds');
+  container.innerHTML = '';
+  m.sounds.forEach(s => {
+    const v = vols[s.k] || 0;
+    const row = document.createElement('div');
+    row.className = 'snd-row' + (v > 0 ? ' on' : '');
+    row.id = 'snd-' + s.k;
+    row.style.cssText = `--ac:${m.ac}`;
+    row.innerHTML = `
+      <div style="font-size:18px;width:28px;text-align:center">${s.e}</div>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:500">${s.n}</div>
+        <input type="range" min="0" max="100" value="${Math.round(v*100)}"
+          oninput="onSlider('${s.k}',this.value,${MODES.indexOf(m)})"
+          style="accent-color:${m.ac}">
+      </div>
+      <div style="font-size:10px;color:rgba(245,240,235,.3);width:28px;text-align:right" id="vol-${s.k}">${v > 0 ? Math.round(v*100)+'%' : 'off'}</div>
+    `;
+    container.appendChild(row);
   });
 
-  const tc=document.getElementById('plTimers');tc.innerHTML='';
-  TIMERS.forEach((t,i)=>{
-    const b=document.createElement('button');b.className='timer-btn'+(i===selTimer?' sel':'');
-    b.textContent=t.l;b.onclick=()=>{selTimer=i;document.querySelectorAll('.timer-btn').forEach((x,j)=>x.classList.toggle('sel',j===i));
-      if(playing&&t.m>0){timeLeft=t.m*60}else if(t.m===0){timeLeft=null}};
-    tc.appendChild(b)
+  // Timer buttons
+  const tc = document.getElementById('plTimers');
+  tc.innerHTML = '';
+  TIMERS.forEach((t, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'timer-btn' + (i === selTimer ? ' sel' : '');
+    btn.style.cssText = `--ac:${m.ac}`;
+    btn.textContent = t.l;
+    btn.onclick = () => selectTimer(i);
+    tc.appendChild(btn);
   });
 
-  updatePlayUI();showScreen('player')
+  updatePlayUI();
+  showScreen('player');
 }
 
-function onSlider(k,val,mi){
-  const v=val/100;vols[k]=v;const on=v>0;const m=MODES[mi];
-  if(playing)setVol(k,v);
-  const row=document.getElementById('sr-'+k);
-  row.className='snd-row'+(on?' on':'');
-  row.querySelector('span').style.filter=on?'none':'grayscale(1) opacity(.35)';
-  row.querySelector('div > div').style.color=on?'#F5F0EB':'rgba(245,240,235,.3)';
-  row.querySelector('input').style.background=`linear-gradient(to right,${m.ac} ${v*100}%,rgba(255,255,255,.08) ${v*100}%)`;
-  document.getElementById('vl-'+k).textContent=Math.round(v*100)+'%';
-  document.getElementById('vl-'+k).style.color=on?m.ac:'rgba(245,240,235,.2)';
-  updatePlayUI()
+function onSlider(k, val, mi) {
+  const v = parseInt(val) / 100;
+  vols[k] = v;
+  const row = document.getElementById('snd-' + k);
+  if (row) { if (v > 0) row.classList.add('on'); else row.classList.remove('on'); }
+  const lbl = document.getElementById('vol-' + k);
+  if (lbl) lbl.textContent = v > 0 ? Math.round(v * 100) + '%' : 'off';
+
+  if (playing && soundCache[k]) {
+    soundCache[k].audio.volume = v;
+    if (v > 0) soundCache[k].audio.play().catch(() => {});
+    else soundCache[k].audio.pause();
+  }
 }
 
-async function togglePlay(){
-  // CRITICAL: synchronous unlock first — before any await
-  unlockAudio();
-  await initAudio();
-  if(!playing){
-    let errs=[];
-    curMode.sounds.forEach(s=>{
-      try{ensureNode(s.k)}catch(e){errs.push(s.k+':'+e.message)}
-      setVol(s.k,vols[s.k]||0);
+function selectTimer(i) {
+  selTimer = i;
+  const btns = document.getElementById('plTimers').children;
+  for (let b of btns) b.classList.remove('sel');
+  btns[i].classList.add('sel');
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; timeLeft = null; }
+  if (playing && TIMERS[selTimer].m > 0) startTimer();
+}
+
+// ─── PLAYBACK ───────────────────────────────────────────────────────
+async function togglePlay() {
+  if (playing) {
+    playing = false;
+    for (const s of curMode.sounds) {
+      if (soundCache[s.k]) soundCache[s.k].audio.pause();
+    }
+    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+    updatePlayUI();
+    return;
+  }
+
+  // Starting
+  const hint = document.getElementById('plHint');
+  const needed = curMode.sounds.filter(s => vols[s.k] > 0 && !soundCache[s.k]);
+  if (needed.length > 0) {
+    hint.textContent = 'preparing sounds...';
+    await Promise.all(needed.map(s => renderSound(s.k)));
+  }
+
+  // Background-render remaining sounds in this mode for slider use later
+  const bg = curMode.sounds.filter(s => !soundCache[s.k]);
+  if (bg.length > 0) Promise.all(bg.map(s => renderSound(s.k))).catch(() => {});
+
+  playing = true;
+  for (const s of curMode.sounds) {
+    if (soundCache[s.k]) {
+      soundCache[s.k].audio.volume = vols[s.k] || 0;
+      if (vols[s.k] > 0) soundCache[s.k].audio.play().catch(() => {});
+    }
+  }
+
+  if (TIMERS[selTimer].m > 0) startTimer();
+  updatePlayUI();
+}
+
+function startTimer() {
+  if (timerInterval) clearInterval(timerInterval);
+  timeLeft = TIMERS[selTimer].m * 60;
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval); timerInterval = null; timeLeft = null;
+      stopAll(); return;
+    }
+    updatePlayUI();
+  }, 1000);
+}
+
+function stopAll() {
+  playing = false;
+  for (const key in soundCache) {
+    soundCache[key].audio.pause();
+    soundCache[key].audio.currentTime = 0;
+  }
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+  timeLeft = null;
+  updatePlayUI();
+}
+
+function updatePlayUI() {
+  const btn = document.getElementById('playBtn');
+  const status = document.getElementById('plStatus');
+  const hint = document.getElementById('plHint');
+  const pulse = document.getElementById('plPulse');
+  const ring = document.getElementById('plOrbRing');
+  const orb = document.getElementById('plOrb');
+  if (!curMode) return;
+  const ac = curMode.ac;
+
+  if (playing) {
+    btn.style.background = `linear-gradient(135deg, ${ac}, ${ac}cc)`;
+    btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 20 20" fill="white"><rect x="4" y="3" width="4" height="14" rx="1"/><rect x="12" y="3" width="4" height="14" rx="1"/></svg>';
+    hint.textContent = 'playing \u00b7 tap to pause';
+    pulse.style.display = 'block';
+    ring.style.display = 'block';
+    ring.style.borderColor = ac + '33';
+    orb.style.boxShadow = `0 0 40px ${ac}55`;
+    if (timeLeft !== null) {
+      const m = Math.floor(timeLeft / 60), s = timeLeft % 60;
+      status.textContent = m + ':' + String(s).padStart(2, '0') + ' remaining';
+    } else {
+      status.textContent = 'playing';
+    }
+  } else {
+    btn.style.background = `linear-gradient(135deg, ${ac}, ${ac}cc)`;
+    btn.innerHTML = '<svg width="22" height="22" viewBox="0 0 22 22" fill="white"><polygon points="5,2 20,11 5,20"/></svg>';
+    hint.textContent = 'tap to play \u00b7 use headphones';
+    status.textContent = 'ready to play';
+    pulse.style.display = 'none';
+    ring.style.display = 'none';
+    orb.style.boxShadow = 'none';
+  }
+}
+
+// ─── FEEDBACK ───────────────────────────────────────────────────────
+function openFeedback() {
+  const modal = document.getElementById('feedbackModal');
+  modal.style.display = 'flex';
+
+  const tags = document.getElementById('fbTags');
+  if (!tags.children.length) {
+    ['ADHD','Autistic','Anxious','Student','Parent','Just curious'].forEach(t => {
+      const b = document.createElement('button');
+      b.textContent = t;
+      b.style.cssText = 'padding:6px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:rgba(245,240,235,.5);font-size:12px;cursor:pointer;font-family:inherit;transition:all .2s';
+      b.onclick = () => {
+        if (b.dataset.sel) { delete b.dataset.sel; b.style.borderColor='rgba(255,255,255,.08)'; b.style.background='rgba(255,255,255,.04)'; b.style.color='rgba(245,240,235,.5)'; }
+        else { b.dataset.sel='1'; b.style.borderColor='#9B7FD4'; b.style.background='rgba(155,127,212,.12)'; b.style.color='#9B7FD4'; }
+      };
+      tags.appendChild(b);
     });
-    startTransport();playing=true;
-    if(errs.length)console.error('Sound init errors:',errs);
-    if(TIMERS[selTimer].m>0){timeLeft=TIMERS[selTimer].m*60;startTimer()}
-  }else{stopAll()}
-  updatePlayUI()
+  }
+
+  const sel = document.getElementById('fbMode');
+  if (sel.children.length <= 1) {
+    MODES.forEach(m => { const o = document.createElement('option'); o.value = m.id; o.textContent = m.icon + ' ' + m.name; sel.appendChild(o); });
+  }
+
+  const pay = document.getElementById('fbPay');
+  if (!pay.children.length) {
+    ['Yes, definitely','Maybe','Probably not','No'].forEach(o => {
+      const b = document.createElement('button');
+      b.textContent = o;
+      b.style.cssText = 'flex:1;padding:8px 4px;border-radius:8px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:rgba(245,240,235,.5);font-size:11px;cursor:pointer;font-family:inherit;transition:all .2s';
+      b.onclick = () => {
+        Array.from(pay.children).forEach(x => { x.style.borderColor='rgba(255,255,255,.08)'; x.style.background='rgba(255,255,255,.04)'; x.style.color='rgba(245,240,235,.5)'; });
+        b.style.borderColor='#9B7FD4'; b.style.background='rgba(155,127,212,.12)'; b.style.color='#9B7FD4';
+      };
+      pay.appendChild(b);
+    });
+  }
 }
 
-function startTimer(){
-  clearInterval(timerInterval);
-  timerInterval=setInterval(()=>{
-    if(timeLeft>0){timeLeft--;updatePlayUI()}
-    else if(timeLeft===0){stopAll()}
-  },1000)
-}
+function closeFeedback() { document.getElementById('feedbackModal').style.display = 'none'; }
 
-function updatePlayUI(){
-  if(!curMode)return;const m=curMode;
-  const actives=m.sounds.filter(s=>(vols[s.k]||0)>0).length;
-  let status=actives+' sound'+(actives!==1?'s':'')+' active';
-  if(timeLeft!=null)status+=' · '+Math.floor(timeLeft/60)+':'+(timeLeft%60).toString().padStart(2,'0');
-  document.getElementById('plStatus').textContent=status;
+function submitFeedback() {
+  const tags = Array.from(document.getElementById('fbTags').children).filter(b => b.dataset.sel).map(b => b.textContent);
+  const mode = document.getElementById('fbMode').value;
+  const text = document.getElementById('fbText').value;
+  const payBtns = Array.from(document.getElementById('fbPay').children);
+  const pay = payBtns.find(b => b.style.color === 'rgb(155, 127, 212)');
+  console.log('Feedback:', JSON.stringify({ tags, mode, text, pay: pay ? pay.textContent : '', ts: new Date().toISOString() }));
 
-  const orb=document.getElementById('plOrb');
-  const ring=document.getElementById('plOrbRing');
-  const pls=document.getElementById('plPulse');
-  orb.style.boxShadow=playing?`0 0 70px ${m.ac}28`:'none';
-  orb.style.animation=playing?'br 6s ease-in-out infinite':'none';
-  ring.style.display=playing?'block':'none';
-  ring.style.borderColor=playing?m.ac+'18':'transparent';
-  ring.style.animation=playing?'br 6s ease-in-out infinite reverse':'none';
-  pls.style.display=playing?'block':'none';
-  pls.style.background=m.ac;
-
-  const btn=document.getElementById('playBtn');
-  btn.style.background=playing?m.ac:`linear-gradient(135deg,${m.ac},${m.ac}CC)`;
-  btn.style.boxShadow=playing?`0 0 36px ${m.ac}45`:`0 4px 14px ${m.ac}28`;
-  btn.innerHTML=playing?'<div style="display:flex;gap:4px"><div style="width:3.5px;height:18px;background:#fff;border-radius:2px"></div><div style="width:3.5px;height:18px;background:#fff;border-radius:2px"></div></div>'
-    :'<div style="width:0;height:0;border-left:12px solid #fff;border-top:9px solid transparent;border-bottom:9px solid transparent;margin-left:2px"></div>';
-  const ctx=getCtx();
-  const dbg=ctx.state||'?';
-  const nc=Object.keys(nodes).length;
-  document.getElementById('plHint').textContent=playing?`playing · tap to pause · ctx:${dbg} · nodes:${nc}`:'tap to play · use headphones for best experience';
-}
-
-// ═══ FEEDBACK SYSTEM ═══
-const fbTagOptions=["Woman","Neurodivergent","ADHD","Autistic","Anxious","Student","Professional","Parent","Other"];
-const fbPayOptions=["Definitely","Maybe","Not sure","No"];
-let fbSelectedTags=[], fbSelectedPay="";
-
-function openFeedback(){
-  document.getElementById('feedbackModal').style.display='flex';
-  // Build tag buttons
-  const tc=document.getElementById('fbTags');tc.innerHTML='';
-  fbTagOptions.forEach(t=>{
-    const b=document.createElement('button');
-    b.textContent=t;b.dataset.tag=t;
-    b.style.cssText=`padding:6px 12px;border-radius:16px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:rgba(245,240,235,.5);font-size:11px;cursor:pointer;font-family:inherit;transition:all .2s`;
-    b.onclick=()=>{
-      if(fbSelectedTags.includes(t)){fbSelectedTags=fbSelectedTags.filter(x=>x!==t);b.style.borderColor='rgba(255,255,255,.08)';b.style.background='rgba(255,255,255,.04)';b.style.color='rgba(245,240,235,.5)'}
-      else{fbSelectedTags.push(t);b.style.borderColor='#9B7FD4';b.style.background='rgba(155,127,212,.12)';b.style.color='#C5AAE0'}
-    };tc.appendChild(b)
-  });
-  // Build mode select
-  const ms=document.getElementById('fbMode');ms.innerHTML='<option value="">select a mode...</option>';
-  MODES.forEach(m=>{const o=document.createElement('option');o.value=m.id;o.textContent=m.name;ms.appendChild(o)});
-  // Build pay buttons
-  const pc=document.getElementById('fbPay');pc.innerHTML='';
-  fbPayOptions.forEach(p=>{
-    const b=document.createElement('button');b.textContent=p;
-    b.style.cssText=`flex:1;padding:8px 4px;border-radius:10px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:rgba(245,240,235,.5);font-size:11px;cursor:pointer;font-family:inherit;transition:all .2s`;
-    b.onclick=()=>{
-      fbSelectedPay=p;
-      pc.querySelectorAll('button').forEach(x=>{x.style.borderColor='rgba(255,255,255,.08)';x.style.background='rgba(255,255,255,.04)';x.style.color='rgba(245,240,235,.5)'});
-      b.style.borderColor='#9B7FD4';b.style.background='rgba(155,127,212,.12)';b.style.color='#C5AAE0'
-    };pc.appendChild(b)
-  });
-}
-
-function closeFeedback(){document.getElementById('feedbackModal').style.display='none'}
-
-function submitFeedback(){
-  const data={
-    tags:fbSelectedTags,
-    favoriteMode:document.getElementById('fbMode').value,
-    feedback:document.getElementById('fbText').value,
-    wouldPay:fbSelectedPay,
-    timestamp:new Date().toISOString()
-  };
-  // Store feedback locally and show confirmation
-  const existing=JSON.parse(localStorage.getItem('hush_feedback')||'[]');
-  existing.push(data);localStorage.setItem('hush_feedback',JSON.stringify(existing));
-  document.getElementById('feedbackModal').querySelector('div').innerHTML=`
+  document.getElementById('feedbackModal').querySelector('div').innerHTML = `
     <div style="text-align:center;padding:40px 0">
       <div style="font-size:40px;margin-bottom:16px">✧</div>
-      <h3 style="font-size:20px;font-weight:400;margin-bottom:8px">thank you</h3>
-      <p style="font-size:13px;color:rgba(245,240,235,.4);font-style:italic">your feedback means the world to us</p>
-      <button onclick="closeFeedback()" style="margin-top:24px;padding:10px 28px;border-radius:10px;border:none;background:rgba(155,127,212,.15);color:#C5AAE0;font-size:13px;cursor:pointer;font-family:inherit">close</button>
-    </div>`;
+      <h3 style="font-size:20px;font-weight:400;margin-bottom:6px">thank you</h3>
+      <p style="font-size:13px;color:rgba(245,240,235,.4);font-style:italic">your feedback helps shape Hush</p>
+      <button onclick="closeFeedback()" style="margin-top:24px;padding:10px 28px;border-radius:10px;border:none;background:linear-gradient(135deg,#9B7FD4,#7B5FB4);color:#fff;font-size:13px;cursor:pointer;font-family:inherit">close</button>
+    </div>
+  `;
 }
 
-// ═══ INIT ═══
+// ─── INIT ───────────────────────────────────────────────────────────
 buildHome();
-
-async function enterFromSplash(){
-  unlockAudio(); // synchronous — must be first
-  try{await Tone.start();audioStarted=true}catch(e){}
-  if(Tone.context.state==='suspended')try{await Tone.context.resume()}catch(e){}
-  showScreen('home')
-}
-
-// Unlock audio on every user gesture
-['touchstart','touchend','click'].forEach(evt=>{
-  document.addEventListener(evt,function(){
-    unlockAudio();
-    if(!audioStarted){Tone.start().then(()=>{audioStarted=true}).catch(()=>{})}
-  },{passive:true})
-});
 </script>
 </body>
 </html>
