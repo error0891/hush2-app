@@ -376,27 +376,23 @@ function ensureNode(k){
     s2.connect(bp2);bp2.connect(g2);g2.connect(g);s2.start()
   }
   else if(k==="stream"){
-    // Gentle small stream: high trickle-focused, minimal bass, babbling brook feel
-    // Layer 1: gentle babble — pink noise through narrow mid-high band with fast fluttery LFO
-    const babble=new Tone.Noise("pink");
-    const babbleBp=new Tone.Filter({frequency:2500,type:"bandpass",Q:1.2});
-    const babbleLfo=new Tone.LFO({frequency:.4,min:1800,max:3200}).start();
-    babbleLfo.connect(babbleBp.frequency);
-    const babbleG=new Tone.Gain(.25);
-    babble.connect(babbleBp);babbleBp.connect(babbleG);babbleG.connect(g);babble.start();
-    // Layer 2: bright sparkle — white noise, high frequency trickle drops
-    const sparkle=new Tone.Noise("white");
-    const spHp=new Tone.Filter(4500,"highpass");
-    const spLp=new Tone.Filter(9000,"lowpass");
-    const spLfo=new Tone.LFO({frequency:.6,min:.02,max:.1}).start();
-    const spG=new Tone.Gain(.04);
-    spLfo.connect(spG.gain);
-    sparkle.connect(spHp);spHp.connect(spLp);spLp.connect(spG);spG.connect(g);sparkle.start();
-    // Layer 3: very soft low murmur — just a hint of body, not beachy
-    const murmur=new Tone.Noise("brown");
-    const murmurLp=new Tone.Filter(300,"lowpass");
-    const murmurG=new Tone.Gain(.08);
-    murmur.connect(murmurLp);murmurLp.connect(murmurG);murmurG.connect(g);murmur.start();
+    // Steady gentle trickle — constant, no pulsing, no LFOs on volume
+    // Layer 1: steady mid-high flow — pink noise through fixed bandpass, no modulation
+    const flow=new Tone.Noise("pink");
+    const flowBp=new Tone.Filter({frequency:2800,type:"bandpass",Q:0.5});
+    const flowG=new Tone.Gain(.22);
+    flow.connect(flowBp);flowBp.connect(flowG);flowG.connect(g);flow.start();
+    // Layer 2: constant soft high shimmer — white noise, fixed gain, no LFO
+    const shimmer=new Tone.Noise("white");
+    const shHp=new Tone.Filter(5000,"highpass");
+    const shLp=new Tone.Filter(10000,"lowpass");
+    const shG=new Tone.Gain(.03);
+    shimmer.connect(shHp);shHp.connect(shLp);shLp.connect(shG);shG.connect(g);shimmer.start();
+    // Layer 3: very gentle low body — steady, quiet
+    const body=new Tone.Noise("brown");
+    const bodyLp=new Tone.Filter(250,"lowpass");
+    const bodyG=new Tone.Gain(.06);
+    body.connect(bodyLp);bodyLp.connect(bodyG);bodyG.connect(g);body.start();
   }
   else if(k==="birds"){
     // Bird chirps: random sine blips at nature frequencies with reverb
