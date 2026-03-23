@@ -653,15 +653,13 @@ function enterPlayerFromPw(){enterPlayer()}
 function enterPlayer(){
   const m=curMode;
   // Fully stop and destroy all existing nodes before entering new mode
-  Object.keys(nodes).forEach(k=>{
-    try{nodes[k].g.gain.rampTo(0,.05)}catch(e){}
-    // Stop audio elements (stream recording)
-    if(nodes[k]._audio){try{nodes[k]._audio.pause();nodes[k]._audio.src=''}catch(e){}}
-    // Disconnect Tone.js nodes
-    try{nodes[k].g.disconnect()}catch(e){}
-    setTimeout(()=>{delete nodes[k]},200);
-  });
+  const oldNodes=Object.assign({},nodes);
   nodes={};
+  Object.keys(oldNodes).forEach(k=>{
+    try{oldNodes[k].g.gain.rampTo(0,.05)}catch(e){}
+    if(oldNodes[k]._audio){try{oldNodes[k]._audio.pause();oldNodes[k]._audio.src=''}catch(e){}}
+    try{oldNodes[k].g.disconnect()}catch(e){}
+  });
   m.sounds.forEach(s=>{vols[s.k]=s.dv});
   playing=false;timeLeft=null;clearInterval(timerInterval);
 
