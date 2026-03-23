@@ -377,13 +377,26 @@ function ensureNode(k){
   }
   else if(k==="stream"){
     // Real recording of a gentle stream (CC BY 4.0 — freesoundslibrary.com)
-    const audio=new Audio("stream.mp3");
+    const audio=new Audio();
+    audio.crossOrigin="anonymous";
+    audio.preload="auto";
     audio.loop=true;
-    // Use HTML audio volume directly — controlled by setVol override below
-    audio.play().catch(()=>{});
-    // Skip normal gain node — store audio ref, setVol will control audio.volume
+    audio.src="stream.mp3";
+    // Try to play — retry on user interaction if blocked
+    function tryPlay(){
+      const p=audio.play();
+      if(p)p.catch(e=>{
+        console.log("stream play blocked, retrying on next touch",e);
+        const retry=()=>{audio.play().catch(()=>{});document.removeEventListener("touchend",retry);document.removeEventListener("click",retry)};
+        document.addEventListener("touchend",retry,{once:true});
+        document.addEventListener("click",retry,{once:true});
+      });
+    }
+    audio.addEventListener("canplaythrough",tryPlay,{once:true});
+    // Also try immediately in case already loaded
+    if(audio.readyState>=3)tryPlay();
     nodes[k]={g,_audio:audio,_useAudioVol:true};
-    return; // skip the nodes[k]={g} at the bottom
+    return;
   }
   else if(k==="birds"){
     // Bird chirps: random sine blips at nature frequencies with reverb
