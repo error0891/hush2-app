@@ -582,7 +582,7 @@ function buildHome(){
   const g=document.getElementById('modeGrid');g.innerHTML='';
   MODES.forEach((m,i)=>{
     const d=document.createElement('div');d.className='mode-card';
-    d.style.background=`linear-gradient(135deg,${m.ac}12,${m.ac}08)`;
+    d.style.background=`linear-gradient(135deg,${m.ac}20,${m.ac}10)`;
     d.style.animation=`sU .5s ease-out ${.08+i*.06}s both`;
     d.innerHTML=`<div class="tag" style="color:${m.ac};background:${m.ac}12;align-self:flex-start;margin-bottom:8px">${m.tag}</div>
       <div style="font-size:15px;font-weight:500;color:${m.ac}">${m.name.toLowerCase()}</div>
