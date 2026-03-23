@@ -311,9 +311,14 @@ function ensureNode(k){
   else if(k==="binaural"){
     const l=ctx.createOscillator();l.type='sine';l.frequency.value=200;
     const r=ctx.createOscillator();r.type='sine';r.frequency.value=240;
-    const panL=ctx.createStereoPanner();panL.pan.value=-1;
-    const panR=ctx.createStereoPanner();panR.pan.value=1;
-    l.connect(panL);panL.connect(g);r.connect(panR);panR.connect(g);
+    if(ctx.createStereoPanner){
+      const panL=ctx.createStereoPanner();panL.pan.value=-1;
+      const panR=ctx.createStereoPanner();panR.pan.value=1;
+      l.connect(panL);panL.connect(g);r.connect(panR);panR.connect(g);
+    }else{
+      // Fallback: no panning, both go to gain (still creates beat frequency)
+      l.connect(g);r.connect(g);
+    }
     l.start();r.start();
   }
   else if(k==="drone"){
@@ -329,14 +334,26 @@ function ensureNode(k){
     osc.connect(dry);dry.connect(g);osc.start();
   }
   else if(k==="lofi"){
-    // Keep Tone.js for PolySynth scheduling
-    const tg=new Tone.Gain(1).connect(g);
-    const rv=new Tone.Reverb({decay:3,wet:.5});const fl=new Tone.Filter(1200,"lowpass");
-    rv.connect(fl);fl.connect(tg);
-    const sy=new Tone.PolySynth(Tone.Synth,{maxPolyphony:8,options:{oscillator:{type:"triangle"},envelope:{attack:.3,decay:.8,sustain:.4,release:1.5},volume:-12}});sy.connect(rv);
-    const ch=[["D4","F4","A4","C5"],["G3","B3","D4","F4"],["C4","E4","G4","B4"],["A3","C4","E4","G4"]];
-    let i=0;const lp=new Tone.Loop(t=>{sy.triggerAttackRelease(ch[i%4],"2n",t);i++},"1m");
-    Tone.getTransport().bpm.value=75;lp.start(0);
+    // Lo-fi chords using raw Web Audio oscillators + setInterval scheduling
+    const rv=ctx.createConvolver();
+    const rl=ctx.sampleRate*2;const imp=ctx.createBuffer(2,rl,ctx.sampleRate);
+    for(let c=0;c<2;c++){const d=imp.getChannelData(c);for(let i=0;i<rl;i++)d[i]=(Math.random()*2-1)*Math.exp(-i/(ctx.sampleRate*0.8))}
+    rv.buffer=imp;
+    const fl=ctx.createBiquadFilter();fl.type='lowpass';fl.frequency.value=1200;
+    rv.connect(fl);fl.connect(g);
+    const chords=[[293.66,349.23,440,523.25],[196,246.94,293.66,349.23],[261.63,329.63,392,493.88],[220,261.63,329.63,392]];
+    let ci=0;
+    function playChord(){
+      chords[ci%4].forEach(freq=>{
+        const o=ctx.createOscillator();o.type='triangle';o.frequency.value=freq;
+        const eg=ctx.createGain();eg.gain.value=0;
+        const now=ctx.currentTime;
+        eg.gain.setValueAtTime(0,now);eg.gain.linearRampToValueAtTime(0.06,now+0.3);
+        eg.gain.linearRampToValueAtTime(0.03,now+1.5);eg.gain.linearRampToValueAtTime(0,now+3);
+        o.connect(eg);eg.connect(rv);o.start(now);o.stop(now+3.5);
+      });ci++;
+    }
+    playChord();nodes[k]._lofiTimer=setInterval(playChord,4000);
   }
   else if(k==="vinyl"){
     const s=makeNoiseSource(ctx,'white');
@@ -362,12 +379,21 @@ function ensureNode(k){
     s.connect(f);f.connect(g);
   }
   else if(k==="heartbeat"){
-    // Use Tone.js for scheduled membrane synth
-    const tg=new Tone.Gain(1).connect(g);
-    const sy=new Tone.MembraneSynth({pitchDecay:.08,octaves:4,envelope:{attack:.01,decay:.3,sustain:0,release:.4},volume:-8});
-    const fl=new Tone.Filter(120,"lowpass");sy.connect(fl);fl.connect(tg);
-    const lp3=new Tone.Loop(t=>{sy.triggerAttackRelease("C1","8n",t);sy.triggerAttackRelease("C1","8n",t+0.25)},"2n");
-    Tone.getTransport().bpm.value=75;lp3.start(0);
+    // Heartbeat using raw Web Audio — two thumps per beat
+    const fl=ctx.createBiquadFilter();fl.type='lowpass';fl.frequency.value=120;fl.connect(g);
+    function thump(){
+      const now=ctx.currentTime;
+      // Double beat: lub-dub
+      [0,0.2].forEach(offset=>{
+        const o=ctx.createOscillator();o.type='sine';o.frequency.value=55;
+        const eg=ctx.createGain();eg.gain.value=0;
+        eg.gain.setValueAtTime(0,now+offset);
+        eg.gain.linearRampToValueAtTime(0.8,now+offset+0.02);
+        eg.gain.linearRampToValueAtTime(0,now+offset+0.3);
+        o.connect(eg);eg.connect(fl);o.start(now+offset);o.stop(now+offset+0.4);
+      });
+    }
+    thump();nodes[k]._hbTimer=setInterval(thump,1000);
   }
   else if(k==="crackling"){
     const s=makeNoiseSource(ctx,'white');
@@ -384,14 +410,21 @@ function ensureNode(k){
     s.connect(f);f.connect(ag);ag.connect(g);
   }
   else if(k==="bowl"){
-    // Use Tone.js for synth scheduling
-    const tg=new Tone.Gain(1).connect(g);
-    const rv=new Tone.Reverb({decay:12,wet:.8});rv.connect(tg);
-    const sy=new Tone.Synth({oscillator:{type:"sine"},envelope:{attack:2,decay:4,sustain:.3,release:6},volume:-10});
-    sy.connect(rv);
-    const notes=["G4","B4","D5","G5"];let ni=0;
-    const lp3=new Tone.Loop(t=>{sy.triggerAttackRelease(notes[ni%4],3,t);ni++},8);
-    lp3.start(0);
+    // Singing bowl using raw Web Audio
+    const rv=ctx.createConvolver();
+    const rl=ctx.sampleRate*5;const imp=ctx.createBuffer(2,rl,ctx.sampleRate);
+    for(let c=0;c<2;c++){const d=imp.getChannelData(c);for(let i=0;i<rl;i++)d[i]=(Math.random()*2-1)*Math.exp(-i/(ctx.sampleRate*2))}
+    rv.buffer=imp;rv.connect(g);
+    const freqs=[392,493.88,587.33,783.99];let bi=0;
+    function ring(){
+      const now=ctx.currentTime;const freq=freqs[bi%4];bi++;
+      const o=ctx.createOscillator();o.type='sine';o.frequency.value=freq;
+      const eg=ctx.createGain();eg.gain.value=0;
+      eg.gain.setValueAtTime(0,now);eg.gain.linearRampToValueAtTime(0.15,now+1);
+      eg.gain.linearRampToValueAtTime(0.05,now+4);eg.gain.linearRampToValueAtTime(0,now+7);
+      o.connect(eg);eg.connect(rv);o.start(now);o.stop(now+7.5);
+    }
+    ring();nodes[k]._bowlTimer=setInterval(ring,8000);
   }
   else if(k==="cafe"){
     const s1=makeNoiseSource(ctx,'pink');
@@ -409,29 +442,13 @@ function ensureNode(k){
 function setVol(k,v){
   vols[k]=v;
   if(!nodes[k])return;
-  const g=nodes[k].g;
-  // Use raw Web Audio param scheduling (more reliable on iOS than Tone.js rampTo)
-  try{
-    const now=getCtx().currentTime;
-    g.gain.cancelScheduledValues(now);
-    g.gain.setValueAtTime(g.gain.value,now);
-    g.gain.linearRampToValueAtTime(v,now+0.5);
-  }catch(e){
-    try{g.gain.value=v}catch(e2){}
-  }
+  // Direct value set — most reliable across all platforms
+  try{nodes[k].g.gain.value=v}catch(e){}
 }
 function startTransport(){if(Tone.getTransport().state!=="started")Tone.getTransport().start()}
 function stopAll(){
-  const now=getCtx().currentTime;
-  Object.keys(nodes).forEach(k=>{
-    try{
-      const g=nodes[k].g;
-      g.gain.cancelScheduledValues(now);
-      g.gain.setValueAtTime(g.gain.value,now);
-      g.gain.linearRampToValueAtTime(0,now+0.3);
-    }catch(e){}
-  });
-  setTimeout(()=>{try{Tone.getTransport().stop()}catch(e){}},400);
+  Object.keys(nodes).forEach(k=>{try{nodes[k].g.gain.value=0}catch(e){}});
+  try{Tone.getTransport().stop()}catch(e){}
   playing=false;clearInterval(timerInterval);timeLeft=null;updatePlayUI()
 }
 
@@ -487,7 +504,7 @@ function enterPlayerFromPw(){enterPlayer()}
 
 function enterPlayer(){
   const m=curMode;
-  Object.keys(nodes).forEach(k=>{try{nodes[k].g.gain.rampTo(0,.1)}catch(e){}});
+  Object.keys(nodes).forEach(k=>{try{nodes[k].g.gain.value=0}catch(e){}});
   m.sounds.forEach(s=>{vols[s.k]=s.dv});
   playing=false;timeLeft=null;clearInterval(timerInterval);
 
@@ -540,8 +557,13 @@ async function togglePlay(){
   unlockAudio();
   await initAudio();
   if(!playing){
-    curMode.sounds.forEach(s=>{ensureNode(s.k);setVol(s.k,vols[s.k]||0)});
+    let errs=[];
+    curMode.sounds.forEach(s=>{
+      try{ensureNode(s.k)}catch(e){errs.push(s.k+':'+e.message)}
+      setVol(s.k,vols[s.k]||0);
+    });
     startTransport();playing=true;
+    if(errs.length)console.error('Sound init errors:',errs);
     if(TIMERS[selTimer].m>0){timeLeft=TIMERS[selTimer].m*60;startTimer()}
   }else{stopAll()}
   updatePlayUI()
@@ -578,9 +600,10 @@ function updatePlayUI(){
   btn.style.boxShadow=playing?`0 0 36px ${m.ac}45`:`0 4px 14px ${m.ac}28`;
   btn.innerHTML=playing?'<div style="display:flex;gap:4px"><div style="width:3.5px;height:18px;background:#fff;border-radius:2px"></div><div style="width:3.5px;height:18px;background:#fff;border-radius:2px"></div></div>'
     :'<div style="width:0;height:0;border-left:12px solid #fff;border-top:9px solid transparent;border-bottom:9px solid transparent;margin-left:2px"></div>';
-  const raw=Tone.context.rawContext||Tone.context;
-  const dbg=raw.state||'?';
-  document.getElementById('plHint').textContent=playing?`playing · tap to pause · ctx:${dbg}`:'tap to play · use headphones for best experience';
+  const ctx=getCtx();
+  const dbg=ctx.state||'?';
+  const nc=Object.keys(nodes).length;
+  document.getElementById('plHint').textContent=playing?`playing · tap to pause · ctx:${dbg} · nodes:${nc}`:'tap to play · use headphones for best experience';
 }
 
 // ═══ FEEDBACK SYSTEM ═══
