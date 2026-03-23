@@ -376,12 +376,11 @@ function ensureNode(k){
     s2.connect(bp2);bp2.connect(g2);g2.connect(g);s2.start()
   }
   else if(k==="stream"){
-    // Small stream / running water — steady, not foamy or bubbly
-    // Just gentle constant pink noise, heavily lowpassed for a soft "shhh" of water
-    const water=new Tone.Noise("pink");
-    const waterLp=new Tone.Filter(1400,"lowpass");
-    const waterG=new Tone.Gain(.35);
-    water.connect(waterLp);waterLp.connect(waterG);waterG.connect(g);water.start();
+    // Small stream — thin, high-pitched, narrow trickle
+    const water=new Tone.Noise("white");
+    const waterBp=new Tone.Filter({frequency:4500,type:"bandpass",Q:2.5});
+    const waterG=new Tone.Gain(.3);
+    water.connect(waterBp);waterBp.connect(waterG);waterG.connect(g);water.start();
   }
   else if(k==="birds"){
     // Bird chirps: random sine blips at nature frequencies with reverb
