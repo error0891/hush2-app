@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1a1520">
+<title>Hush — Sound Therapy</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%239B7FD4'/></svg>">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow-x:hidden}
+body{font-family:Georgia,'Times New Roman',serif;background:linear-gradient(160deg,#1a1520,#1e1528 30%,#1a1225 60%,#151018);color:#F5F0EB;min-height:100vh;min-height:100dvh}
+.screen{display:none;min-height:100vh;min-height:100dvh;position:relative;overflow:hidden;flex-direction:column}
+.screen.active{display:flex}
+.blob{position:absolute;border-radius:50%;filter:blur(60px);opacity:.35;pointer-events:none;animation:bF 8s ease-in-out infinite alternate}
+@keyframes bF{0%{transform:translate(0,0) scale(1)}100%{transform:translate(20px,-20px) scale(1.1)}}
+@keyframes fU{0%{opacity:0;transform:translateY(16px)}100%{opacity:1;transform:translateY(0)}}
+@keyframes br{0%{transform:scale(.88)}50%{transform:scale(1.12)}100%{transform:scale(.88)}}
+@keyframes sU{0%{opacity:0;transform:translateY(24px)}100%{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:.4}50%{opacity:.9}}
+input[type=range]{-webkit-appearance:none;appearance:none;height:3px;border-radius:2px;outline:none;cursor:pointer;background:rgba(255,255,255,.1);width:100%;margin-top:6px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#fff;border:none;box-shadow:0 1px 6px rgba(0,0,0,.35)}
+.z{position:relative;z-index:1}
+.tag{font-size:9px;font-weight:600;padding:2px 7px;border-radius:6px;letter-spacing:.04em;font-family:system-ui,sans-serif;display:inline-block}
+.mode-card{border-radius:18px;padding:16px 14px;cursor:pointer;position:relative;overflow:hidden;min-height:110px;display:flex;flex-direction:column;transition:transform .15s;-webkit-user-select:none;user-select:none}
+.mode-card:active{transform:scale(.96)}
+.snd-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;border:1px solid rgba(255,255,255,.04);background:rgba(255,255,255,.02);transition:all .3s}
+.snd-row.on{border-color:var(--ac,.5);background:color-mix(in srgb,var(--ac) 6%,transparent)}
+.timer-btn{flex:1;padding:8px 0;border-radius:10px;border:1px solid rgba(255,255,255,.05);background:rgba(255,255,255,.015);color:rgba(245,240,235,.35);font-size:11px;cursor:pointer;font-family:system-ui,sans-serif;font-weight:500;transition:all .2s}
+.timer-btn.sel{border-color:color-mix(in srgb,var(--ac) 40%,transparent);background:color-mix(in srgb,var(--ac) 8%,transparent);color:var(--ac)}
+.play-btn{width:64px;height:64px;border-radius:50%;border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .3s}
+.play-btn:active{transform:scale(.92)}
+.check{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.check:last-child{border:none}
+.feedback-bar{position:fixed;bottom:0;left:0;right:0;z-index:100;padding:10px 16px;padding-bottom:max(10px,env(safe-area-inset-bottom,10px));background:linear-gradient(to top,rgba(26,21,32,.98),rgba(26,21,32,.9));border-top:1px solid rgba(155,127,212,.15);display:flex;align-items:center;justify-content:center;gap:8px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.feedback-btn{background:linear-gradient(135deg,#9B7FD4,#7B5FB4);border:none;color:#fff;font-size:11px;font-family:system-ui,sans-serif;font-weight:600;padding:8px 18px;border-radius:20px;cursor:pointer;letter-spacing:.03em}
+.feedback-btn:active{transform:scale(.95)}
+.scroll-area{overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:60px}
+</style>
+</head>
+<body>
+
+<!-- ═══ SPLASH ═══ -->
+<div id="splash" class="screen active" onclick="enterFromSplash()" style="cursor:pointer">
+  <div class="blob" style="width:280px;height:280px;left:-60px;top:-40px;background:#9B7FD4"></div>
+  <div class="blob" style="width:200px;height:200px;left:60%;top:60%;background:#D4727F;animation-delay:2s"></div>
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center">
+    <div style="width:72px;height:72px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#C5AAE0,#9B7FD4 50%,#6B52A3);margin-bottom:24px;animation:fU 1s ease-out,br 6s ease-in-out 1s infinite;box-shadow:0 0 60px rgba(155,127,212,.3)"></div>
+    <h1 style="font-size:40px;font-weight:400;letter-spacing:.08em;animation:fU 1s ease-out .3s both">hush</h1>
+    <p style="font-size:13px;color:rgba(245,240,235,.45);letter-spacing:.15em;animation:fU 1s ease-out .6s both;margin-top:8px;font-style:italic">sound therapy for your mind</p>
+    <p style="font-size:12px;color:rgba(245,240,235,.3);letter-spacing:.08em;animation:fU 1s ease-out .9s both;margin-top:32px;font-family:system-ui,sans-serif">tap anywhere to enter</p>
+  </div>
+</div>
+
+<!-- ═══ HOME ═══ -->
+<div id="home" class="screen">
+  <div class="blob" style="width:240px;height:240px;left:-50px;top:-30px;background:#9B7FD4"></div>
+  <div class="blob" style="width:170px;height:170px;left:65%;top:50%;background:#D4727F;animation-delay:2s"></div>
+  <div class="blob" style="width:130px;height:130px;left:70%;top:-5%;background:#5A9B72;animation-delay:4s"></div>
+  <div class="z scroll-area" style="padding:48px 22px 28px;padding-top:max(48px,env(safe-area-inset-top,48px))">
+    <div style="animation:fU .6s ease-out">
+      <p id="greeting" style="font-size:12px;color:rgba(245,240,235,.35);letter-spacing:.1em;margin-bottom:3px">good evening</p>
+      <h1 style="font-size:26px;font-weight:400;letter-spacing:.01em;margin-bottom:3px">what does your mind need?</h1>
+      <p style="font-size:12px;color:rgba(245,240,235,.3);font-style:italic">cycle day 22 · luteal phase</p>
+    </div>
+    <div onclick="openMode(1)" style="margin-top:20px;padding:14px 16px;border-radius:16px;background:rgba(212,114,127,.07);border:1px solid rgba(212,114,127,.12);animation:fU .6s ease-out .1s both;cursor:pointer">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:34px;height:34px;border-radius:50%;background:radial-gradient(circle,rgba(212,114,127,.2),rgba(212,114,127,.06));display:flex;align-items:center;justify-content:center;font-size:16px">◐</div>
+        <div>
+          <div style="font-size:13px;font-weight:500">cycle comfort recommended</div>
+          <div style="font-size:11px;color:rgba(245,240,235,.35);margin-top:1px">Progesterone is dropping — sound therapy can help</div>
+        </div>
+      </div>
+    </div>
+    <div id="modeGrid" style="margin-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:9px"></div>
+    <div style="margin-top:16px;padding:12px 16px;border-radius:14px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.04);display:flex;align-items:center;gap:12px;animation:fU .6s ease-out .5s both">
+      <div style="width:32px;height:32px;border-radius:50%;background:rgba(155,127,212,.12);display:flex;align-items:center;justify-content:center;font-size:14px">✧</div>
+      <div>
+        <div style="font-size:12px;font-weight:500">12-day streak</div>
+        <div style="font-size:10px;color:rgba(245,240,235,.3)">You've used Hush every day this cycle</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PAYWALL ═══ -->
+<div id="paywall" class="screen">
+  <div class="blob" id="pwBlob1" style="width:280px;height:280px;left:-80px;top:15%"></div>
+  <div class="blob" style="width:160px;height:160px;left:70%;top:55%;background:#D4727F;animation-delay:3s"></div>
+  <div class="z" style="padding:60px 28px 28px;flex:1;display:flex;flex-direction:column">
+    <button onclick="showScreen('home')" style="position:absolute;top:20px;left:20px;background:rgba(255,255,255,.07);border:none;color:rgba(245,240,235,.5);font-size:13px;border-radius:16px;padding:7px 14px;cursor:pointer;font-family:inherit">← back</button>
+    <div style="text-align:center;margin-top:36px;animation:fU .7s ease-out">
+      <div id="pwOrb" style="width:64px;height:64px;border-radius:50%;margin:0 auto 16px;animation:br 5s ease-in-out infinite"></div>
+      <h2 id="pwTitle" style="font-size:26px;font-weight:400;margin-bottom:6px;letter-spacing:.02em"></h2>
+      <p id="pwSub" style="font-size:13px;color:rgba(245,240,235,.4);font-style:italic"></p>
+    </div>
+    <div id="pwFeatures" style="margin-top:30px;animation:fU .7s ease-out .15s both"></div>
+    <div style="margin-top:auto;padding-top:28px;animation:fU .7s ease-out .3s both">
+      <div style="text-align:center;padding:18px;border-radius:18px;border:1.5px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);margin-bottom:10px">
+        <div style="font-size:30px;font-weight:400">$0.99<span style="font-size:13px;color:rgba(245,240,235,.4)"> /week</span></div>
+        <div style="font-size:11px;color:rgba(245,240,235,.35);margin-top:3px">3-day free trial · cancel anytime</div>
+      </div>
+      <button id="pwCta" onclick="enterPlayerFromPw()" style="width:100%;padding:15px;border-radius:14px;border:none;color:#fff;font-size:15px;font-weight:500;cursor:pointer;font-family:inherit;letter-spacing:.02em">start free trial</button>
+      <button onclick="enterPlayerFromPw()" style="width:100%;padding:10px;border-radius:10px;border:none;background:transparent;color:rgba(245,240,235,.3);font-size:12px;cursor:pointer;font-family:inherit;margin-top:4px">continue with free sounds</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PLAYER ═══ -->
+<div id="player" class="screen">
+  <div class="blob" id="plBlob1" style="width:260px;height:260px;left:-70px;top:8%"></div>
+  <div class="blob" id="plBlob2" style="width:160px;height:160px;left:65%;top:50%;animation-delay:3s"></div>
+  <div class="z" style="padding:16px 22px;padding-top:max(16px,env(safe-area-inset-top,16px));flex:1;display:flex;flex-direction:column;overflow-y:auto;padding-bottom:60px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <button onclick="stopAll();showScreen('home')" style="background:rgba(255,255,255,.05);border:none;color:rgba(245,240,235,.5);font-size:12px;border-radius:12px;padding:6px 12px;cursor:pointer;font-family:inherit">← back</button>
+      <div id="plTag" class="tag"></div>
+    </div>
+    <div style="text-align:center;animation:fU .5s ease-out">
+      <div style="position:relative;display:inline-block;margin:4px 0 12px">
+        <div id="plOrb" style="width:100px;height:100px;border-radius:50%;transition:box-shadow .8s"></div>
+        <div id="plOrbRing" style="position:absolute;inset:-12px;border-radius:50%;border:1px solid transparent;display:none"></div>
+      </div>
+      <h2 id="plName" style="font-size:20px;font-weight:400;margin-bottom:3px"></h2>
+      <p id="plStatus" style="font-size:12px;color:rgba(245,240,235,.35);font-style:italic"></p>
+      <div id="plPulse" style="margin:6px auto 0;width:40px;height:3px;border-radius:2px;animation:pulse 2s ease-in-out infinite;opacity:.5;display:none"></div>
+    </div>
+    <div style="margin-top:16px;animation:fU .5s ease-out .1s both">
+      <div style="font-size:10px;color:rgba(245,240,235,.25);letter-spacing:.07em;font-family:system-ui,sans-serif;margin-bottom:6px">mix your sounds</div>
+      <div id="plSounds" style="display:flex;flex-direction:column;gap:7px"></div>
+    </div>
+    <div style="margin-top:14px;animation:fU .5s ease-out .2s both">
+      <div style="font-size:10px;color:rgba(245,240,235,.25);letter-spacing:.07em;font-family:system-ui,sans-serif;margin-bottom:6px">timer</div>
+      <div id="plTimers" style="display:flex;gap:5px"></div>
+    </div>
+    <div style="margin-top:auto;padding:16px 0 12px;text-align:center;animation:fU .5s ease-out .3s both">
+      <button id="playBtn" class="play-btn" onclick="togglePlay()" style="margin:0 auto"></button>
+      <div id="plHint" style="font-size:10px;color:rgba(245,240,235,.2);margin-top:8px;font-family:system-ui,sans-serif"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ FEEDBACK BAR ═══ -->
+<div id="feedbackBar" class="feedback-bar" style="display:none">
+  <span style="font-size:11px;color:rgba(245,240,235,.4);font-family:system-ui,sans-serif">testing Hush?</span>
+  <button class="feedback-btn" onclick="openFeedback()">share feedback</button>
+</div>
+
+<!-- ═══ FEEDBACK MODAL ═══ -->
+<div id="feedbackModal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:24px">
+  <div style="background:linear-gradient(160deg,#1e1528,#1a1225);border-radius:24px;padding:28px 24px;max-width:380px;width:100%;border:1px solid rgba(155,127,212,.15);max-height:80vh;overflow-y:auto">
+    <h3 style="font-size:20px;font-weight:400;margin-bottom:4px;text-align:center">share your thoughts</h3>
+    <p style="font-size:12px;color:rgba(245,240,235,.35);text-align:center;margin-bottom:20px;font-style:italic">help us make Hush better for you</p>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div>
+        <label style="font-size:11px;color:rgba(245,240,235,.4);font-family:system-ui,sans-serif;letter-spacing:.05em;display:block;margin-bottom:4px">I am</label>
+        <div style="display:flex;flex-wrap:wrap;gap:6px" id="fbTags"></div>
+      </div>
+      <div>
+        <label style="font-size:11px;color:rgba(245,240,235,.4);font-family:system-ui,sans-serif;letter-spacing:.05em;display:block;margin-bottom:4px">which mode did you like most?</label>
+        <select id="fbMode" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:#F5F0EB;font-family:inherit;font-size:13px;appearance:none;-webkit-appearance:none">
+          <option value="">select a mode...</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:11px;color:rgba(245,240,235,.4);font-family:system-ui,sans-serif;letter-spacing:.05em;display:block;margin-bottom:4px">what would you change or add?</label>
+        <textarea id="fbText" rows="3" placeholder="more sounds, different modes, anything..." style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:#F5F0EB;font-family:inherit;font-size:13px;resize:none"></textarea>
+      </div>
+      <div>
+        <label style="font-size:11px;color:rgba(245,240,235,.4);font-family:system-ui,sans-serif;letter-spacing:.05em;display:block;margin-bottom:4px">would you pay for this?</label>
+        <div style="display:flex;gap:6px" id="fbPay"></div>
+      </div>
+      <button onclick="submitFeedback()" style="width:100%;padding:13px;border-radius:12px;border:none;background:linear-gradient(135deg,#9B7FD4,#7B5FB4);color:#fff;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;margin-top:4px">send feedback</button>
+      <button onclick="closeFeedback()" style="width:100%;padding:8px;border:none;background:transparent;color:rgba(245,240,235,.3);font-size:12px;cursor:pointer;font-family:inherit">maybe later</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+<script>
+// ═══ MODES — expanded with new sounds & 3 new modes ═══
+const MODES=[
+  {id:"focus",name:"Focus",sub:"Quiet the noise",icon:"◎",grad:"linear-gradient(135deg,#E8DFF5,#C4B0F4)",ac:"#9B7FD4",tag:"ADHD-optimized",
+    sounds:[{k:"brown",n:"Brown noise",e:"🌊",dv:.5},{k:"rain",n:"Gentle rain",e:"🌧",dv:0},{k:"binaural",n:"Focus pulse",e:"🧠",dv:0},{k:"lofi",n:"Lo-fi chords",e:"🎹",dv:0},{k:"cafe",n:"Cafe murmur",e:"☕",dv:0},{k:"vinyl",n:"Vinyl warmth",e:"💿",dv:0}]},
+  {id:"cycle",name:"Cycle comfort",sub:"Sound relief, synced to you",icon:"◐",grad:"linear-gradient(135deg,#FDE8E8,#EDA8A8)",ac:"#D4727F",tag:"Period pain relief",pro:1,
+    sounds:[{k:"drone",n:"Warm hum",e:"♨️",dv:.4},{k:"brown",n:"Deep brown",e:"🌊",dv:.5},{k:"heartbeat",n:"Heartbeat",e:"💓",dv:0},{k:"pink",n:"Pink noise",e:"💗",dv:0},{k:"bowl",n:"Singing bowl",e:"🔔",dv:0},{k:"binaural",n:"Pain relief",e:"🫧",dv:0}]},
+  {id:"cocoon",name:"Sensory cocoon",sub:"When the world is too much",icon:"◉",grad:"linear-gradient(135deg,#E0EDE5,#94C4A5)",ac:"#5A9B72",tag:"Autism-friendly",
+    sounds:[{k:"brown",n:"Deep brown",e:"🪨",dv:.7},{k:"rain",n:"Steady rain",e:"🌧",dv:0},{k:"pink",n:"Soft pink",e:"✧",dv:0},{k:"drone",n:"Low drone",e:"🫶",dv:0},{k:"wind",n:"Gentle wind",e:"🍃",dv:0},{k:"vinyl",n:"Warm static",e:"🕯",dv:0}]},
+  {id:"sleep",name:"Sleep",sub:"Let racing thoughts rest",icon:"◗",grad:"linear-gradient(135deg,#DDE4F0,#97AAD0)",ac:"#6B82B8",tag:"Racing thoughts",
+    sounds:[{k:"pink",n:"Pink noise",e:"💤",dv:.5},{k:"brown",n:"Brown noise",e:"🌙",dv:.3},{k:"rain",n:"Night rain",e:"🌧",dv:0},{k:"drone",n:"Sleep drone",e:"🌀",dv:0},{k:"crackling",n:"Fireplace",e:"🔥",dv:0},{k:"vinyl",n:"Tape hiss",e:"📼",dv:0}]},
+  {id:"study",name:"Study",sub:"Your focus companion",icon:"◈",grad:"linear-gradient(135deg,#F0E6F5,#C5AAE0)",ac:"#9A6DBF",tag:"Lo-fi beats",
+    sounds:[{k:"lofi",n:"Jazz chords",e:"🎹",dv:.4},{k:"vinyl",n:"Vinyl crackle",e:"💿",dv:.2},{k:"brown",n:"Background hum",e:"☕",dv:.2},{k:"rain",n:"Window rain",e:"🌧",dv:0},{k:"cafe",n:"Library hum",e:"📚",dv:0},{k:"binaural",n:"Focus pulse",e:"🧠",dv:0}]},
+  {id:"anxiety",name:"Grounding",sub:"Anchor yourself here",icon:"⊛",grad:"linear-gradient(135deg,#E8E0D0,#C4A87F)",ac:"#A8884F",tag:"Anxiety relief",
+    sounds:[{k:"heartbeat",n:"Slow heartbeat",e:"💓",dv:.3},{k:"brown",n:"Earth tone",e:"🪨",dv:.4},{k:"rain",n:"Soft rain",e:"🌧",dv:0},{k:"bowl",n:"Singing bowl",e:"🔔",dv:0},{k:"wind",n:"Forest breeze",e:"🍃",dv:0},{k:"drone",n:"Grounding hum",e:"🫶",dv:0}]},
+  {id:"bodydouble",name:"Body double",sub:"Someone's working nearby",icon:"◇",grad:"linear-gradient(135deg,#F5E6D8,#D4A88C)",ac:"#B87A5A",tag:"ADHD coworking",
+    sounds:[{k:"cafe",n:"Cafe ambiance",e:"☕",dv:.5},{k:"vinyl",n:"Keyboard taps",e:"⌨️",dv:.2},{k:"lofi",n:"Soft beats",e:"🎹",dv:0},{k:"rain",n:"Window rain",e:"🌧",dv:0},{k:"brown",n:"Room tone",e:"🏠",dv:0},{k:"crackling",n:"Candle crackle",e:"🕯",dv:0}]},
+  {id:"meltdown",name:"Recovery",sub:"Gently come back to yourself",icon:"◌",grad:"linear-gradient(135deg,#E0E4ED,#A8B0C8)",ac:"#7A84A0",tag:"Meltdown recovery",
+    sounds:[{k:"brown",n:"Deep cocoon",e:"🫧",dv:.6},{k:"drone",n:"Gentle hum",e:"🌀",dv:.2},{k:"pink",n:"Soft wash",e:"☁️",dv:0},{k:"bowl",n:"Distant bowl",e:"🔔",dv:0},{k:"wind",n:"Slow breeze",e:"🍃",dv:0},{k:"heartbeat",n:"Calm pulse",e:"💓",dv:0}]}
+];
+const TIMERS=[{l:"5m",m:5},{l:"15m",m:15},{l:"25m",m:25},{l:"45m",m:45},{l:"1hr",m:60},{l:"∞",m:0}];
+
+let curMode=null,playing=false,selTimer=5,timeLeft=null,timerInterval=null,audioStarted=false;
+const nodes={},vols={};
+
+// ═══ AUDIO ENGINE — expanded with rain, thunder, heartbeat, wind, crackling, singing bowl, cafe ═══
+async function initAudio(){if(audioStarted&&Tone.context.state==='running')return;try{await Tone.start();audioStarted=true}catch(e){}if(Tone.context.state==='suspended')try{await Tone.context.resume()}catch(e){}}
+
+function ensureNode(k){
+  if(nodes[k])return;
+  const g=new Tone.Gain(0).toDestination();
+
+  if(k==="brown"){
+    const s=new Tone.Noise("brown");const f=new Tone.Filter(800,"lowpass");s.connect(f);f.connect(g);s.start()
+  }
+  else if(k==="pink"){
+    const s=new Tone.Noise("pink");s.connect(g);s.start()
+  }
+  else if(k==="white"){
+    const s=new Tone.Noise("white");const f=new Tone.Filter(2000,"lowpass");s.connect(f);f.connect(g);s.start()
+  }
+  else if(k==="binaural"){
+    const l=new Tone.Oscillator(200,"sine"),r=new Tone.Oscillator(240,"sine"),pl=new Tone.Panner(-1),pr=new Tone.Panner(1);
+    l.connect(pl);pl.connect(g);r.connect(pr);pr.connect(g);l.start();r.start()
+  }
+  else if(k==="drone"){
+    const s=new Tone.Synth({oscillator:{type:"sine"},envelope:{attack:2,decay:0,sustain:1,release:4}});
+    const rv=new Tone.Reverb({decay:8,wet:.7});s.connect(rv);rv.connect(g);s.triggerAttack("C2")
+  }
+  else if(k==="lofi"){
+    const rv=new Tone.Reverb({decay:3,wet:.5}),fl=new Tone.Filter(1200,"lowpass");rv.connect(fl);fl.connect(g);
+    const sy=new Tone.PolySynth(Tone.Synth,{maxPolyphony:8,options:{oscillator:{type:"triangle"},envelope:{attack:.3,decay:.8,sustain:.4,release:1.5},volume:-12}});sy.connect(rv);
+    const ch=[["D4","F4","A4","C5"],["G3","B3","D4","F4"],["C4","E4","G4","B4"],["A3","C4","E4","G4"]];
+    let i=0;const lp=new Tone.Loop(t=>{sy.triggerAttackRelease(ch[i%4],"2n",t);i++},"1m");
+    Tone.getTransport().bpm.value=75;lp.start(0)
+  }
+  else if(k==="vinyl"){
+    const s=new Tone.Noise("white");const f=new Tone.Filter({frequency:800,type:"bandpass",Q:.5});s.connect(f);f.connect(g);s.start()
+  }
+  // ── NEW SOUNDS ──
+  else if(k==="rain"){
+    // Rain: pink noise through bandpass + LFO for patter variation
+    const s=new Tone.Noise("pink");
+    const bp=new Tone.Filter({frequency:3000,type:"bandpass",Q:0.3});
+    const lp2=new Tone.Filter(5000,"lowpass");
+    const lfo=new Tone.LFO({frequency:.15,min:1800,max:4500}).start();
+    lfo.connect(bp.frequency);
+    s.connect(bp);bp.connect(lp2);lp2.connect(g);s.start()
+  }
+  else if(k==="wind"){
+    // Wind: brown noise with slow LFO on filter for gusts
+    const s=new Tone.Noise("brown");
+    const bp=new Tone.Filter({frequency:600,type:"bandpass",Q:0.8});
+    const lfo=new Tone.LFO({frequency:.08,min:300,max:1200}).start();
+    lfo.connect(bp.frequency);
+    s.connect(bp);bp.connect(g);s.start()
+  }
+  else if(k==="heartbeat"){
+    // Heartbeat: sub-bass kick at ~60bpm
+    const sy=new Tone.MembraneSynth({pitchDecay:.08,octaves:4,envelope:{attack:.01,decay:.3,sustain:0,release:.4},volume:-8});
+    const lp2=new Tone.Filter(120,"lowpass");sy.connect(lp2);lp2.connect(g);
+    const lp3=new Tone.Loop(t=>{sy.triggerAttackRelease("C1","8n",t);sy.triggerAttackRelease("C1","8n",t+0.25)},"2n");
+    Tone.getTransport().bpm.value=75;lp3.start(0)
+  }
+  else if(k==="crackling"){
+    // Fireplace crackling: filtered white noise bursts
+    const s=new Tone.Noise("white");
+    const bp=new Tone.Filter({frequency:2500,type:"bandpass",Q:2});
+    const ag=new Tone.Gain(0);
+    const lfo=new Tone.LFO({frequency:6,min:0,max:.8,type:"square"}).start();
+    // Random modulation for crackle effect
+    const lfo2=new Tone.LFO({frequency:.5,min:3,max:12}).start();
+    lfo2.connect(lfo.frequency);
+    lfo.connect(ag.gain);
+    s.connect(bp);bp.connect(ag);ag.connect(g);s.start()
+  }
+  else if(k==="bowl"){
+    // Singing bowl: sine with slow attack and long reverb
+    const rv=new Tone.Reverb({decay:12,wet:.8});rv.connect(g);
+    const sy=new Tone.Synth({oscillator:{type:"sine"},envelope:{attack:2,decay:4,sustain:.3,release:6},volume:-10});
+    sy.connect(rv);
+    // Ring every ~8 seconds with slight pitch variation
+    const notes=["G4","B4","D5","G5"];let ni=0;
+    const lp2=new Tone.Loop(t=>{sy.triggerAttackRelease(notes[ni%4],"4n",t);ni++},"8n");
+    // Slow loop: one strike every 8 seconds
+    const lp3=new Tone.Loop(t=>{sy.triggerAttackRelease(notes[ni%4],3,t);ni++},8);
+    lp3.start(0)
+  }
+  else if(k==="cafe"){
+    // Cafe: layered filtered noises for ambient chatter + clinks
+    const s1=new Tone.Noise("pink");
+    const bp1=new Tone.Filter({frequency:1200,type:"bandpass",Q:.4});
+    const s2=new Tone.Noise("white");
+    const bp2=new Tone.Filter({frequency:3000,type:"bandpass",Q:1.5});
+    const g2=new Tone.Gain(.15);
+    const lfo=new Tone.LFO({frequency:.2,min:.05,max:.25}).start();
+    lfo.connect(g2.gain);
+    s1.connect(bp1);bp1.connect(g);s1.start();
+    s2.connect(bp2);bp2.connect(g2);g2.connect(g);s2.start()
+  }
+
+  nodes[k]={g}
+}
+
+function setVol(k,v){vols[k]=v;if(nodes[k])nodes[k].g.gain.rampTo(v,.5)}
+function startTransport(){if(Tone.getTransport().state!=="started")Tone.getTransport().start()}
+function stopAll(){
+  Object.keys(nodes).forEach(k=>nodes[k].g.gain.rampTo(0,.3));
+  setTimeout(()=>Tone.getTransport().stop(),400);
+  playing=false;clearInterval(timerInterval);timeLeft=null;updatePlayUI()
+}
+
+// ═══ SCREENS ═══
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  // Show feedback bar on home and player screens
+  document.getElementById('feedbackBar').style.display=(id==='home'||id==='player')?'flex':'none';
+}
+
+// ═══ HOME ═══
+function getGreeting(){
+  const h=new Date().getHours();
+  if(h<5)return"still up?";if(h<12)return"good morning";if(h<17)return"good afternoon";if(h<21)return"good evening";return"winding down?"
+}
+
+function buildHome(){
+  document.getElementById('greeting').textContent=getGreeting();
+  const g=document.getElementById('modeGrid');g.innerHTML='';
+  MODES.forEach((m,i)=>{
+    const d=document.createElement('div');d.className='mode-card';d.style.background=m.grad;
+    d.style.animation=`sU .5s ease-out ${.08+i*.06}s both`;
+    d.innerHTML=`<div class="tag" style="color:${m.ac};background:${m.ac}15;align-self:flex-start;margin-bottom:8px">${m.tag}</div>
+      <div style="font-size:15px;font-weight:500;color:${m.ac}">${m.name.toLowerCase()}</div>
+      <div style="font-size:10px;color:${m.ac}90;margin-top:3px;line-height:1.3;font-style:italic">${m.sub}</div>
+      <div style="position:absolute;right:12px;bottom:10px;font-size:24px;color:${m.ac}25">${m.icon}</div>
+      ${m.pro?`<div style="position:absolute;top:10px;right:10px;font-size:8px;color:${m.ac};background:${m.ac}18;padding:2px 6px;border-radius:4px;font-family:system-ui;font-weight:600">PRO</div>`:''}`;
+    d.onclick=()=>openMode(i);g.appendChild(d)
+  })
+}
+
+function openMode(i){
+  curMode=MODES[i];
+  if(curMode.pro){showPaywall();return}
+  enterPlayer()
+}
+
+function showPaywall(){
+  const m=curMode;
+  document.getElementById('pwBlob1').style.background=m.ac;
+  document.getElementById('pwOrb').style.background=`radial-gradient(circle at 35% 35%,${m.ac}60,${m.ac})`;
+  document.getElementById('pwOrb').style.boxShadow=`0 0 50px ${m.ac}35`;
+  document.getElementById('pwTitle').textContent='unlock '+m.name.toLowerCase();
+  document.getElementById('pwSub').textContent=m.sub;
+  document.getElementById('pwCta').style.background=m.ac;
+  document.getElementById('pwCta').style.boxShadow=`0 8px 28px ${m.ac}40`;
+  const feats=["Cycle-synced sound therapy","Period pain relief tones","Guided breathing overlays","Unlimited sound mixing","Personal sound profile"];
+  document.getElementById('pwFeatures').innerHTML=feats.map(f=>`<div class="check"><div style="width:22px;height:22px;border-radius:50%;background:${m.ac}20;display:flex;align-items:center;justify-content:center;font-size:10px;color:${m.ac};flex-shrink:0">✓</div><span style="font-size:13px;color:rgba(245,240,235,.7)">${f}</span></div>`).join('');
+  showScreen('paywall')
+}
+function enterPlayerFromPw(){enterPlayer()}
+
+function enterPlayer(){
+  const m=curMode;
+  Object.keys(nodes).forEach(k=>{try{nodes[k].g.gain.rampTo(0,.1)}catch(e){}});
+  m.sounds.forEach(s=>{vols[s.k]=s.dv});
+  playing=false;timeLeft=null;clearInterval(timerInterval);
+
+  const pl=document.getElementById('player');
+  pl.style.setProperty('--ac',m.ac);
+  document.getElementById('plBlob1').style.background=m.ac;
+  document.getElementById('plBlob2').style.background=m.ac;
+  document.getElementById('plTag').textContent=m.tag;
+  document.getElementById('plTag').style.cssText=`font-size:9px;color:${m.ac};background:${m.ac}12;padding:4px 10px;border-radius:8px;font-family:system-ui;font-weight:600;letter-spacing:.05em`;
+  document.getElementById('plOrb').style.background=`radial-gradient(circle at 40% 35%,${m.ac}60,${m.ac}40,${m.ac}10)`;
+  document.getElementById('plName').textContent=m.name.toLowerCase();
+
+  const sc=document.getElementById('plSounds');sc.innerHTML='';
+  m.sounds.forEach(s=>{
+    const v=vols[s.k]||0;const on=v>0;
+    const row=document.createElement('div');row.className='snd-row'+(on?' on':'');row.id='sr-'+s.k;
+    row.innerHTML=`<span style="font-size:20px;width:28px;text-align:center;filter:${on?'none':'grayscale(1) opacity(.35)'};transition:filter .3s">${s.e}</span>
+      <div style="flex:1"><div style="font-size:12px;font-weight:500;color:${on?'#F5F0EB':'rgba(245,240,235,.3)'};transition:color .3s">${s.n}</div>
+      <input type="range" min="0" max="100" value="${Math.round(v*100)}" oninput="onSlider('${s.k}',this.value,${MODES.indexOf(m)})" style="background:linear-gradient(to right,${m.ac} ${v*100}%,rgba(255,255,255,.08) ${v*100}%)"></div>
+      <div style="font-size:10px;color:${on?m.ac:'rgba(245,240,235,.2)'};min-width:28px;text-align:right;font-family:system-ui;font-weight:500" id="vl-${s.k}">${Math.round(v*100)}%</div>`;
+    sc.appendChild(row)
+  });
+
+  const tc=document.getElementById('plTimers');tc.innerHTML='';
+  TIMERS.forEach((t,i)=>{
+    const b=document.createElement('button');b.className='timer-btn'+(i===selTimer?' sel':'');
+    b.textContent=t.l;b.onclick=()=>{selTimer=i;document.querySelectorAll('.timer-btn').forEach((x,j)=>x.classList.toggle('sel',j===i));
+      if(playing&&t.m>0){timeLeft=t.m*60}else if(t.m===0){timeLeft=null}};
+    tc.appendChild(b)
+  });
+
+  updatePlayUI();showScreen('player')
+}
+
+function onSlider(k,val,mi){
+  const v=val/100;vols[k]=v;const on=v>0;const m=MODES[mi];
+  if(playing)setVol(k,v);
+  const row=document.getElementById('sr-'+k);
+  row.className='snd-row'+(on?' on':'');
+  row.querySelector('span').style.filter=on?'none':'grayscale(1) opacity(.35)';
+  row.querySelector('div > div').style.color=on?'#F5F0EB':'rgba(245,240,235,.3)';
+  row.querySelector('input').style.background=`linear-gradient(to right,${m.ac} ${v*100}%,rgba(255,255,255,.08) ${v*100}%)`;
+  document.getElementById('vl-'+k).textContent=Math.round(v*100)+'%';
+  document.getElementById('vl-'+k).style.color=on?m.ac:'rgba(245,240,235,.2)';
+  updatePlayUI()
+}
+
+async function togglePlay(){
+  if(!playing){
+    await initAudio();
+    if(Tone.context.state==='suspended')try{await Tone.context.resume()}catch(e){}
+    curMode.sounds.forEach(s=>{ensureNode(s.k);setVol(s.k,vols[s.k]||0)});
+    startTransport();playing=true;
+    if(TIMERS[selTimer].m>0){timeLeft=TIMERS[selTimer].m*60;startTimer()}
+  }else{stopAll()}
+  updatePlayUI()
+}
+
+function startTimer(){
+  clearInterval(timerInterval);
+  timerInterval=setInterval(()=>{
+    if(timeLeft>0){timeLeft--;updatePlayUI()}
+    else if(timeLeft===0){stopAll()}
+  },1000)
+}
+
+function updatePlayUI(){
+  if(!curMode)return;const m=curMode;
+  const actives=m.sounds.filter(s=>(vols[s.k]||0)>0).length;
+  let status=actives+' sound'+(actives!==1?'s':'')+' active';
+  if(timeLeft!=null)status+=' · '+Math.floor(timeLeft/60)+':'+(timeLeft%60).toString().padStart(2,'0');
+  document.getElementById('plStatus').textContent=status;
+
+  const orb=document.getElementById('plOrb');
+  const ring=document.getElementById('plOrbRing');
+  const pls=document.getElementById('plPulse');
+  orb.style.boxShadow=playing?`0 0 70px ${m.ac}28`:'none';
+  orb.style.animation=playing?'br 6s ease-in-out infinite':'none';
+  ring.style.display=playing?'block':'none';
+  ring.style.borderColor=playing?m.ac+'18':'transparent';
+  ring.style.animation=playing?'br 6s ease-in-out infinite reverse':'none';
+  pls.style.display=playing?'block':'none';
+  pls.style.background=m.ac;
+
+  const btn=document.getElementById('playBtn');
+  btn.style.background=playing?m.ac:`linear-gradient(135deg,${m.ac},${m.ac}CC)`;
+  btn.style.boxShadow=playing?`0 0 36px ${m.ac}45`:`0 4px 14px ${m.ac}28`;
+  btn.innerHTML=playing?'<div style="display:flex;gap:4px"><div style="width:3.5px;height:18px;background:#fff;border-radius:2px"></div><div style="width:3.5px;height:18px;background:#fff;border-radius:2px"></div></div>'
+    :'<div style="width:0;height:0;border-left:12px solid #fff;border-top:9px solid transparent;border-bottom:9px solid transparent;margin-left:2px"></div>';
+  document.getElementById('plHint').textContent=playing?'playing · tap to pause':'tap to play · use headphones for best experience';
+}
+
+// ═══ FEEDBACK SYSTEM ═══
+const fbTagOptions=["Woman","Neurodivergent","ADHD","Autistic","Anxious","Student","Professional","Parent","Other"];
+const fbPayOptions=["Definitely","Maybe","Not sure","No"];
+let fbSelectedTags=[], fbSelectedPay="";
+
+function openFeedback(){
+  document.getElementById('feedbackModal').style.display='flex';
+  // Build tag buttons
+  const tc=document.getElementById('fbTags');tc.innerHTML='';
+  fbTagOptions.forEach(t=>{
+    const b=document.createElement('button');
+    b.textContent=t;b.dataset.tag=t;
+    b.style.cssText=`padding:6px 12px;border-radius:16px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:rgba(245,240,235,.5);font-size:11px;cursor:pointer;font-family:system-ui,sans-serif;transition:all .2s`;
+    b.onclick=()=>{
+      if(fbSelectedTags.includes(t)){fbSelectedTags=fbSelectedTags.filter(x=>x!==t);b.style.borderColor='rgba(255,255,255,.08)';b.style.background='rgba(255,255,255,.04)';b.style.color='rgba(245,240,235,.5)'}
+      else{fbSelectedTags.push(t);b.style.borderColor='#9B7FD4';b.style.background='rgba(155,127,212,.12)';b.style.color='#C5AAE0'}
+    };tc.appendChild(b)
+  });
+  // Build mode select
+  const ms=document.getElementById('fbMode');ms.innerHTML='<option value="">select a mode...</option>';
+  MODES.forEach(m=>{const o=document.createElement('option');o.value=m.id;o.textContent=m.name;ms.appendChild(o)});
+  // Build pay buttons
+  const pc=document.getElementById('fbPay');pc.innerHTML='';
+  fbPayOptions.forEach(p=>{
+    const b=document.createElement('button');b.textContent=p;
+    b.style.cssText=`flex:1;padding:8px 4px;border-radius:10px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:rgba(245,240,235,.5);font-size:11px;cursor:pointer;font-family:system-ui,sans-serif;transition:all .2s`;
+    b.onclick=()=>{
+      fbSelectedPay=p;
+      pc.querySelectorAll('button').forEach(x=>{x.style.borderColor='rgba(255,255,255,.08)';x.style.background='rgba(255,255,255,.04)';x.style.color='rgba(245,240,235,.5)'});
+      b.style.borderColor='#9B7FD4';b.style.background='rgba(155,127,212,.12)';b.style.color='#C5AAE0'
+    };pc.appendChild(b)
+  });
+}
+
+function closeFeedback(){document.getElementById('feedbackModal').style.display='none'}
+
+function submitFeedback(){
+  const data={
+    tags:fbSelectedTags,
+    favoriteMode:document.getElementById('fbMode').value,
+    feedback:document.getElementById('fbText').value,
+    wouldPay:fbSelectedPay,
+    timestamp:new Date().toISOString()
+  };
+  // Store feedback locally and show confirmation
+  const existing=JSON.parse(localStorage.getItem('hush_feedback')||'[]');
+  existing.push(data);localStorage.setItem('hush_feedback',JSON.stringify(existing));
+  document.getElementById('feedbackModal').querySelector('div').innerHTML=`
+    <div style="text-align:center;padding:40px 0">
+      <div style="font-size:40px;margin-bottom:16px">✧</div>
+      <h3 style="font-size:20px;font-weight:400;margin-bottom:8px">thank you</h3>
+      <p style="font-size:13px;color:rgba(245,240,235,.4);font-style:italic">your feedback means the world to us</p>
+      <button onclick="closeFeedback()" style="margin-top:24px;padding:10px 28px;border-radius:10px;border:none;background:rgba(155,127,212,.15);color:#C5AAE0;font-size:13px;cursor:pointer;font-family:inherit">close</button>
+    </div>`;
+}
+
+// ═══ INIT ═══
+buildHome();
+
+async function enterFromSplash(){
+  try{await Tone.start();audioStarted=true}catch(e){}
+  if(Tone.context.state==='suspended')try{await Tone.context.resume()}catch(e){}
+  showScreen('home')
+}
+
+document.addEventListener('touchstart',async function unlock(){
+  if(!audioStarted){try{await Tone.start();audioStarted=true}catch(e){}}
+  if(Tone.context.state==='suspended')try{await Tone.context.resume()}catch(e){}
+  document.removeEventListener('touchstart',unlock)
+},{once:true});
+</script>
+</body>
+</html>
