@@ -19,8 +19,9 @@ body{font-family:'DM Sans',-apple-system,BlinkMacSystemFont,system-ui,sans-serif
 h1,h2{font-weight:300;letter-spacing:.03em}
 h1{font-size:24px}
 .brand{font-weight:200;letter-spacing:.12em}
-.screen{display:none;min-height:100vh;min-height:100dvh;position:relative;overflow:hidden;flex-direction:column}
+.screen{display:none;min-height:100vh;min-height:100dvh;position:relative;overflow:hidden;flex-direction:column;max-width:430px;margin:0 auto;width:100%}
 .screen.active{display:flex}
+@media(min-width:500px){body{background:#0d0b12}.screen{border-left:1px solid rgba(255,255,255,.03);border-right:1px solid rgba(255,255,255,.03);box-shadow:0 0 80px rgba(152,144,176,.04)}}
 .blob{position:absolute;border-radius:50%;filter:blur(70px);opacity:.25;pointer-events:none;animation:bF 8s ease-in-out infinite alternate}
 @keyframes bF{0%{transform:translate(0,0) scale(1)}100%{transform:translate(20px,-20px) scale(1.1)}}
 @keyframes fU{0%{opacity:0;transform:translateY(16px)}100%{opacity:1;transform:translateY(0)}}
@@ -41,7 +42,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
 .play-btn:active{transform:scale(.92)}
 .check{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04)}
 .check:last-child{border:none}
-.feedback-bar{position:fixed;bottom:0;left:0;right:0;z-index:100;padding:10px 16px;padding-bottom:max(10px,env(safe-area-inset-bottom,10px));background:linear-gradient(to top,rgba(26,21,32,.98),rgba(26,21,32,.9));border-top:1px solid rgba(152,144,176,.15);display:flex;align-items:center;justify-content:center;gap:8px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.feedback-bar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;z-index:100;padding:10px 16px;padding-bottom:max(10px,env(safe-area-inset-bottom,10px));background:linear-gradient(to top,rgba(26,21,32,.98),rgba(26,21,32,.9));border-top:1px solid rgba(152,144,176,.15);display:flex;align-items:center;justify-content:center;gap:8px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
 .feedback-btn{background:linear-gradient(135deg,#9890B0,#8878A0);border:none;color:#fff;font-size:11px;font-family:inherit;font-weight:600;padding:8px 18px;border-radius:20px;cursor:pointer;letter-spacing:.03em}
 .feedback-btn:active{transform:scale(.95)}
 .scroll-area{overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:60px}
