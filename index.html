@@ -16,7 +16,7 @@ body{font-family:'Helvetica Neue',-apple-system,BlinkMacSystemFont,system-ui,san
 h1,h2{font-weight:300;letter-spacing:.02em}
 .screen{display:none;min-height:100vh;min-height:100dvh;position:relative;overflow:hidden;flex-direction:column}
 .screen.active{display:flex}
-.blob{position:absolute;border-radius:50%;filter:blur(60px);opacity:.35;pointer-events:none;animation:bF 8s ease-in-out infinite alternate}
+.blob{position:absolute;border-radius:50%;filter:blur(70px);opacity:.25;pointer-events:none;animation:bF 8s ease-in-out infinite alternate}
 @keyframes bF{0%{transform:translate(0,0) scale(1)}100%{transform:translate(20px,-20px) scale(1.1)}}
 @keyframes fU{0%{opacity:0;transform:translateY(16px)}100%{opacity:1;transform:translateY(0)}}
 @keyframes br{0%{transform:scale(.88)}50%{transform:scale(1.12)}100%{transform:scale(.88)}}
@@ -36,8 +36,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
 .play-btn:active{transform:scale(.92)}
 .check{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04)}
 .check:last-child{border:none}
-.feedback-bar{position:fixed;bottom:0;left:0;right:0;z-index:100;padding:10px 16px;padding-bottom:max(10px,env(safe-area-inset-bottom,10px));background:linear-gradient(to top,rgba(26,21,32,.98),rgba(26,21,32,.9));border-top:1px solid rgba(155,127,212,.15);display:flex;align-items:center;justify-content:center;gap:8px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
-.feedback-btn{background:linear-gradient(135deg,#9B7FD4,#7B5FB4);border:none;color:#fff;font-size:11px;font-family:inherit;font-weight:600;padding:8px 18px;border-radius:20px;cursor:pointer;letter-spacing:.03em}
+.feedback-bar{position:fixed;bottom:0;left:0;right:0;z-index:100;padding:10px 16px;padding-bottom:max(10px,env(safe-area-inset-bottom,10px));background:linear-gradient(to top,rgba(26,21,32,.98),rgba(26,21,32,.9));border-top:1px solid rgba(152,144,176,.15);display:flex;align-items:center;justify-content:center;gap:8px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.feedback-btn{background:linear-gradient(135deg,#9890B0,#8878A0);border:none;color:#fff;font-size:11px;font-family:inherit;font-weight:600;padding:8px 18px;border-radius:20px;cursor:pointer;letter-spacing:.03em}
 .feedback-btn:active{transform:scale(.95)}
 .scroll-area{overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:60px}
 </style>
@@ -46,10 +46,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
 
 <!-- ═══ SPLASH ═══ -->
 <div id="splash" class="screen active" onclick="enterFromSplash()" ontouchend="enterFromSplash()" style="cursor:pointer">
-  <div class="blob" style="width:280px;height:280px;left:-60px;top:-40px;background:#9B7FD4"></div>
-  <div class="blob" style="width:200px;height:200px;left:60%;top:60%;background:#D4727F;animation-delay:2s"></div>
+  <div class="blob" style="width:280px;height:280px;left:-60px;top:-40px;background:#9890B0"></div>
+  <div class="blob" style="width:200px;height:200px;left:60%;top:60%;background:#B8868C;animation-delay:2s"></div>
   <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center">
-    <div style="width:72px;height:72px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#C5AAE0,#9B7FD4 50%,#6B52A3);margin-bottom:24px;animation:fU 1s ease-out,br 6s ease-in-out 1s infinite;box-shadow:0 0 60px rgba(155,127,212,.3)"></div>
+    <div style="width:72px;height:72px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#C0B8D0,#9890B0 50%,#7A6E90);margin-bottom:24px;animation:fU 1s ease-out,br 6s ease-in-out 1s infinite;box-shadow:0 0 60px rgba(152,144,176,.3)"></div>
     <h1 class="brand" style="font-size:40px;font-weight:400;letter-spacing:.08em;animation:fU 1s ease-out .3s both">hush</h1>
     <p style="font-size:13px;color:rgba(245,240,235,.45);letter-spacing:.15em;animation:fU 1s ease-out .6s both;margin-top:8px;font-style:italic">sound therapy for your mind</p>
     <p style="font-size:12px;color:rgba(245,240,235,.3);letter-spacing:.08em;animation:fU 1s ease-out .9s both;margin-top:32px;font-family:inherit">tap anywhere to enter</p>
@@ -58,18 +58,18 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
 
 <!-- ═══ HOME ═══ -->
 <div id="home" class="screen">
-  <div class="blob" style="width:240px;height:240px;left:-50px;top:-30px;background:#9B7FD4"></div>
-  <div class="blob" style="width:170px;height:170px;left:65%;top:50%;background:#D4727F;animation-delay:2s"></div>
-  <div class="blob" style="width:130px;height:130px;left:70%;top:-5%;background:#5A9B72;animation-delay:4s"></div>
+  <div class="blob" style="width:240px;height:240px;left:-50px;top:-30px;background:#9890B0"></div>
+  <div class="blob" style="width:170px;height:170px;left:65%;top:50%;background:#B8868C;animation-delay:2s"></div>
+  <div class="blob" style="width:130px;height:130px;left:70%;top:-5%;background:#7A9B86;animation-delay:4s"></div>
   <div class="z scroll-area" style="padding:48px 22px 28px;padding-top:max(48px,env(safe-area-inset-top,48px))">
     <div style="animation:fU .6s ease-out">
       <p id="greeting" style="font-size:12px;color:rgba(245,240,235,.35);letter-spacing:.1em;margin-bottom:3px">good evening</p>
       <h1 style="font-size:26px;font-weight:400;letter-spacing:.01em;margin-bottom:3px">what does your mind need?</h1>
       <p style="font-size:12px;color:rgba(245,240,235,.3);font-style:italic">cycle day 22 · luteal phase</p>
     </div>
-    <div onclick="openMode(1)" style="margin-top:20px;padding:14px 16px;border-radius:16px;background:rgba(212,114,127,.07);border:1px solid rgba(212,114,127,.12);animation:fU .6s ease-out .1s both;cursor:pointer">
+    <div onclick="openMode(1)" style="margin-top:20px;padding:14px 16px;border-radius:16px;background:rgba(184,134,140,.07);border:1px solid rgba(184,134,140,.12);animation:fU .6s ease-out .1s both;cursor:pointer">
       <div style="display:flex;align-items:center;gap:10px">
-        <div style="width:34px;height:34px;border-radius:50%;background:radial-gradient(circle,rgba(212,114,127,.2),rgba(212,114,127,.06));display:flex;align-items:center;justify-content:center;font-size:16px">◐</div>
+        <div style="width:34px;height:34px;border-radius:50%;background:radial-gradient(circle,rgba(184,134,140,.2),rgba(184,134,140,.06));display:flex;align-items:center;justify-content:center;font-size:16px">◐</div>
         <div>
           <div style="font-size:13px;font-weight:500">cycle comfort recommended</div>
           <div style="font-size:11px;color:rgba(245,240,235,.35);margin-top:1px">Progesterone is dropping — sound therapy can help</div>
@@ -78,7 +78,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
     </div>
     <div id="modeGrid" style="margin-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:9px"></div>
     <div style="margin-top:16px;padding:12px 16px;border-radius:14px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.04);display:flex;align-items:center;gap:12px;animation:fU .6s ease-out .5s both">
-      <div style="width:32px;height:32px;border-radius:50%;background:rgba(155,127,212,.12);display:flex;align-items:center;justify-content:center;font-size:14px">✧</div>
+      <div style="width:32px;height:32px;border-radius:50%;background:rgba(152,144,176,.12);display:flex;align-items:center;justify-content:center;font-size:14px">✧</div>
       <div>
         <div style="font-size:12px;font-weight:500">12-day streak</div>
         <div style="font-size:10px;color:rgba(245,240,235,.3)">You've used Hush every day this cycle</div>
@@ -90,7 +90,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
 <!-- ═══ PAYWALL ═══ -->
 <div id="paywall" class="screen">
   <div class="blob" id="pwBlob1" style="width:280px;height:280px;left:-80px;top:15%"></div>
-  <div class="blob" style="width:160px;height:160px;left:70%;top:55%;background:#D4727F;animation-delay:3s"></div>
+  <div class="blob" style="width:160px;height:160px;left:70%;top:55%;background:#B8868C;animation-delay:3s"></div>
   <div class="z" style="padding:60px 28px 28px;flex:1;display:flex;flex-direction:column">
     <button onclick="showScreen('home')" style="position:absolute;top:20px;left:20px;background:rgba(255,255,255,.07);border:none;color:rgba(245,240,235,.5);font-size:13px;border-radius:16px;padding:7px 14px;cursor:pointer;font-family:inherit">← back</button>
     <div style="text-align:center;margin-top:36px;animation:fU .7s ease-out">
@@ -151,7 +151,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
 
 <!-- ═══ FEEDBACK MODAL ═══ -->
 <div id="feedbackModal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:24px">
-  <div style="background:linear-gradient(160deg,#1e1528,#1a1225);border-radius:24px;padding:28px 24px;max-width:380px;width:100%;border:1px solid rgba(155,127,212,.15);max-height:80vh;overflow-y:auto">
+  <div style="background:linear-gradient(160deg,#1e1528,#1a1225);border-radius:24px;padding:28px 24px;max-width:380px;width:100%;border:1px solid rgba(152,144,176,.15);max-height:80vh;overflow-y:auto">
     <h3 style="font-size:20px;font-weight:400;margin-bottom:4px;text-align:center">share your thoughts</h3>
     <p style="font-size:12px;color:rgba(245,240,235,.35);text-align:center;margin-bottom:20px;font-style:italic">help us make Hush better for you</p>
     <div style="display:flex;flex-direction:column;gap:12px">
@@ -173,7 +173,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
         <label style="font-size:11px;color:rgba(245,240,235,.4);font-family:inherit;letter-spacing:.05em;display:block;margin-bottom:4px">would you pay for this?</label>
         <div style="display:flex;gap:6px" id="fbPay"></div>
       </div>
-      <button onclick="submitFeedback()" style="width:100%;padding:13px;border-radius:12px;border:none;background:linear-gradient(135deg,#9B7FD4,#7B5FB4);color:#fff;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;margin-top:4px">send feedback</button>
+      <button onclick="submitFeedback()" style="width:100%;padding:13px;border-radius:12px;border:none;background:linear-gradient(135deg,#9890B0,#8878A0);color:#fff;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;margin-top:4px">send feedback</button>
       <button onclick="closeFeedback()" style="width:100%;padding:8px;border:none;background:transparent;color:rgba(245,240,235,.3);font-size:12px;cursor:pointer;font-family:inherit">maybe later</button>
     </div>
   </div>
@@ -183,21 +183,21 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
 <script>
 // ═══ MODES — expanded with new sounds & 3 new modes ═══
 const MODES=[
-  {id:"focus",name:"Focus",sub:"Quiet the noise",icon:"◎",grad:"linear-gradient(135deg,#E8DFF5,#C4B0F4)",ac:"#9B7FD4",tag:"ADHD-optimized",
+  {id:"focus",name:"Focus",sub:"Quiet the noise",icon:"◎",grad:"linear-gradient(135deg,#E8E2F0,#C8BDD8)",ac:"#9890B0",tag:"ADHD-optimized",
     sounds:[{k:"brown",n:"Brown noise",e:"🌊",dv:.5},{k:"rain",n:"Gentle rain",e:"🌧",dv:0},{k:"binaural",n:"Focus pulse",e:"🧠",dv:0},{k:"lofi",n:"Lo-fi chords",e:"🎹",dv:0},{k:"cafe",n:"Cafe murmur",e:"☕",dv:0},{k:"vinyl",n:"Vinyl warmth",e:"💿",dv:0}]},
-  {id:"cycle",name:"Cycle comfort",sub:"Sound relief, synced to you",icon:"◐",grad:"linear-gradient(135deg,#FDE8E8,#EDA8A8)",ac:"#D4727F",tag:"Period pain relief",pro:1,
+  {id:"cycle",name:"Cycle comfort",sub:"Sound relief, synced to you",icon:"◐",grad:"linear-gradient(135deg,#F0E2E4,#D8B8BC)",ac:"#B8868C",tag:"Period pain relief",pro:1,
     sounds:[{k:"drone",n:"Warm hum",e:"♨️",dv:.4},{k:"brown",n:"Deep brown",e:"🌊",dv:.5},{k:"heartbeat",n:"Heartbeat",e:"💓",dv:0},{k:"pink",n:"Pink noise",e:"💗",dv:0},{k:"bowl",n:"Singing bowl",e:"🔔",dv:0},{k:"binaural",n:"Pain relief",e:"🫧",dv:0}]},
-  {id:"cocoon",name:"Sensory cocoon",sub:"When the world is too much",icon:"◉",grad:"linear-gradient(135deg,#E0EDE5,#94C4A5)",ac:"#5A9B72",tag:"Autism-friendly",
+  {id:"cocoon",name:"Sensory cocoon",sub:"When the world is too much",icon:"◉",grad:"linear-gradient(135deg,#E2EBE5,#B0C8B8)",ac:"#7A9B86",tag:"Autism-friendly",
     sounds:[{k:"brown",n:"Deep brown",e:"🪨",dv:.7},{k:"rain",n:"Steady rain",e:"🌧",dv:0},{k:"pink",n:"Soft pink",e:"✧",dv:0},{k:"drone",n:"Low drone",e:"🫶",dv:0},{k:"wind",n:"Gentle wind",e:"🍃",dv:0},{k:"vinyl",n:"Warm static",e:"🕯",dv:0}]},
-  {id:"sleep",name:"Sleep",sub:"Let racing thoughts rest",icon:"◗",grad:"linear-gradient(135deg,#DDE4F0,#97AAD0)",ac:"#6B82B8",tag:"Racing thoughts",
+  {id:"sleep",name:"Sleep",sub:"Let racing thoughts rest",icon:"◗",grad:"linear-gradient(135deg,#E0E4EC,#B0B8CC)",ac:"#8290A8",tag:"Racing thoughts",
     sounds:[{k:"pink",n:"Pink noise",e:"💤",dv:.5},{k:"brown",n:"Brown noise",e:"🌙",dv:.3},{k:"rain",n:"Night rain",e:"🌧",dv:0},{k:"drone",n:"Sleep drone",e:"🌀",dv:0},{k:"crackling",n:"Fireplace",e:"🔥",dv:0},{k:"vinyl",n:"Tape hiss",e:"📼",dv:0}]},
-  {id:"study",name:"Study",sub:"Your focus companion",icon:"◈",grad:"linear-gradient(135deg,#F0E6F5,#C5AAE0)",ac:"#9A6DBF",tag:"Lo-fi beats",
+  {id:"study",name:"Study",sub:"Your focus companion",icon:"◈",grad:"linear-gradient(135deg,#EBE4F0,#C8B8D8)",ac:"#9488A8",tag:"Lo-fi beats",
     sounds:[{k:"lofi",n:"Jazz chords",e:"🎹",dv:.4},{k:"vinyl",n:"Vinyl crackle",e:"💿",dv:.2},{k:"brown",n:"Background hum",e:"☕",dv:.2},{k:"rain",n:"Window rain",e:"🌧",dv:0},{k:"cafe",n:"Library hum",e:"📚",dv:0},{k:"binaural",n:"Focus pulse",e:"🧠",dv:0}]},
-  {id:"anxiety",name:"Grounding",sub:"Anchor yourself here",icon:"⊛",grad:"linear-gradient(135deg,#E8E0D0,#C4A87F)",ac:"#A8884F",tag:"Anxiety relief",
+  {id:"anxiety",name:"Grounding",sub:"Anchor yourself here",icon:"⊛",grad:"linear-gradient(135deg,#EBE6DC,#C8BCAA)",ac:"#A09480",tag:"Anxiety relief",
     sounds:[{k:"heartbeat",n:"Slow heartbeat",e:"💓",dv:.3},{k:"brown",n:"Earth tone",e:"🪨",dv:.4},{k:"rain",n:"Soft rain",e:"🌧",dv:0},{k:"bowl",n:"Singing bowl",e:"🔔",dv:0},{k:"wind",n:"Forest breeze",e:"🍃",dv:0},{k:"drone",n:"Grounding hum",e:"🫶",dv:0}]},
-  {id:"bodydouble",name:"Body double",sub:"Someone's working nearby",icon:"◇",grad:"linear-gradient(135deg,#F5E6D8,#D4A88C)",ac:"#B87A5A",tag:"ADHD coworking",
+  {id:"bodydouble",name:"Body double",sub:"Someone's working nearby",icon:"◇",grad:"linear-gradient(135deg,#EDE6DE,#CCB8A8)",ac:"#A89080",tag:"ADHD coworking",
     sounds:[{k:"cafe",n:"Cafe ambiance",e:"☕",dv:.5},{k:"vinyl",n:"Keyboard taps",e:"⌨️",dv:.2},{k:"lofi",n:"Soft beats",e:"🎹",dv:0},{k:"rain",n:"Window rain",e:"🌧",dv:0},{k:"brown",n:"Room tone",e:"🏠",dv:0},{k:"crackling",n:"Candle crackle",e:"🕯",dv:0}]},
-  {id:"meltdown",name:"Recovery",sub:"Gently come back to yourself",icon:"◌",grad:"linear-gradient(135deg,#E0E4ED,#A8B0C8)",ac:"#7A84A0",tag:"Meltdown recovery",
+  {id:"meltdown",name:"Recovery",sub:"Gently come back to yourself",icon:"◌",grad:"linear-gradient(135deg,#E4E6EC,#B8BCC8)",ac:"#8A8EA0",tag:"Meltdown recovery",
     sounds:[{k:"brown",n:"Deep cocoon",e:"🫧",dv:.6},{k:"drone",n:"Gentle hum",e:"🌀",dv:.2},{k:"pink",n:"Soft wash",e:"☁️",dv:0},{k:"bowl",n:"Distant bowl",e:"🔔",dv:0},{k:"wind",n:"Slow breeze",e:"🍃",dv:0},{k:"heartbeat",n:"Calm pulse",e:"💓",dv:0}]}
 ];
 const TIMERS=[{l:"5m",m:5},{l:"15m",m:15},{l:"25m",m:25},{l:"45m",m:45},{l:"1hr",m:60},{l:"∞",m:0}];
@@ -484,7 +484,7 @@ function openFeedback(){
     b.style.cssText=`padding:6px 12px;border-radius:16px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:rgba(245,240,235,.5);font-size:11px;cursor:pointer;font-family:inherit;transition:all .2s`;
     b.onclick=()=>{
       if(fbSelectedTags.includes(t)){fbSelectedTags=fbSelectedTags.filter(x=>x!==t);b.style.borderColor='rgba(255,255,255,.08)';b.style.background='rgba(255,255,255,.04)';b.style.color='rgba(245,240,235,.5)'}
-      else{fbSelectedTags.push(t);b.style.borderColor='#9B7FD4';b.style.background='rgba(155,127,212,.12)';b.style.color='#C5AAE0'}
+      else{fbSelectedTags.push(t);b.style.borderColor='#9890B0';b.style.background='rgba(152,144,176,.12)';b.style.color='#C0B8D0'}
     };tc.appendChild(b)
   });
   // Build mode select
@@ -498,7 +498,7 @@ function openFeedback(){
     b.onclick=()=>{
       fbSelectedPay=p;
       pc.querySelectorAll('button').forEach(x=>{x.style.borderColor='rgba(255,255,255,.08)';x.style.background='rgba(255,255,255,.04)';x.style.color='rgba(245,240,235,.5)'});
-      b.style.borderColor='#9B7FD4';b.style.background='rgba(155,127,212,.12)';b.style.color='#C5AAE0'
+      b.style.borderColor='#9890B0';b.style.background='rgba(152,144,176,.12)';b.style.color='#C0B8D0'
     };pc.appendChild(b)
   });
 }
@@ -521,7 +521,7 @@ function submitFeedback(){
       <div style="font-size:40px;margin-bottom:16px">✧</div>
       <h3 style="font-size:20px;font-weight:400;margin-bottom:8px">thank you</h3>
       <p style="font-size:13px;color:rgba(245,240,235,.4);font-style:italic">your feedback means the world to us</p>
-      <button onclick="closeFeedback()" style="margin-top:24px;padding:10px 28px;border-radius:10px;border:none;background:rgba(155,127,212,.15);color:#C5AAE0;font-size:13px;cursor:pointer;font-family:inherit">close</button>
+      <button onclick="closeFeedback()" style="margin-top:24px;padding:10px 28px;border-radius:10px;border:none;background:rgba(152,144,176,.15);color:#C0B8D0;font-size:13px;cursor:pointer;font-family:inherit">close</button>
     </div>`;
 }
 
