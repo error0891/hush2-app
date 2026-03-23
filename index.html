@@ -325,12 +325,31 @@ function ensureNode(k){
     mid.connect(midBp);midBp.connect(midG);midG.connect(g);mid.start();
   }
   else if(k==="wind"){
-    // Wind: brown noise with slow LFO on filter for gusts
-    const s=new Tone.Noise("brown");
-    const bp=new Tone.Filter({frequency:600,type:"bandpass",Q:0.8});
-    const lfo=new Tone.LFO({frequency:.08,min:300,max:1200}).start();
-    lfo.connect(bp.frequency);
-    s.connect(bp);bp.connect(g);s.start()
+    // Natural sea breeze: layered noise at different bands with irregular LFOs
+    // Layer 1: low rumble (distant wind)
+    const lo=new Tone.Noise("brown");
+    const loF=new Tone.Filter({frequency:250,type:"lowpass"});
+    const loG=new Tone.Gain(.5);
+    const loLfo=new Tone.LFO({frequency:.03,min:.2,max:.6,type:"sine"}).start();
+    loLfo.connect(loG.gain);
+    lo.connect(loF);loF.connect(loG);loG.connect(g);lo.start();
+    // Layer 2: mid whoosh (main body) with slow irregular sweep
+    const mid=new Tone.Noise("pink");
+    const midF=new Tone.Filter({frequency:800,type:"bandpass",Q:0.4});
+    const midG=new Tone.Gain(.25);
+    const midLfo=new Tone.LFO({frequency:.05,min:400,max:1400,type:"sine"}).start();
+    midLfo.connect(midF.frequency);
+    const midVol=new Tone.LFO({frequency:.07,min:.1,max:.35,type:"sine"}).start();
+    midVol.connect(midG.gain);
+    mid.connect(midF);midF.connect(midG);midG.connect(g);mid.start();
+    // Layer 3: gentle high air (rustling leaves texture)
+    const hi=new Tone.Noise("white");
+    const hiF=new Tone.Filter({frequency:3000,type:"highpass"});
+    const hiLp=new Tone.Filter({frequency:6000,type:"lowpass"});
+    const hiG=new Tone.Gain(.04);
+    const hiLfo=new Tone.LFO({frequency:.02,min:.01,max:.06,type:"sine"}).start();
+    hiLfo.connect(hiG.gain);
+    hi.connect(hiF);hiF.connect(hiLp);hiLp.connect(hiG);hiG.connect(g);hi.start()
   }
   else if(k==="heartbeat"){
     // Heartbeat: sub-bass kick at ~60bpm
