@@ -215,7 +215,7 @@ const MODES=[
     sounds:[{k:"heartbeat",n:"Slow heartbeat",e:"💓",dv:.25},{k:"brown",n:"Earth tone",e:"🪨",dv:.35},{k:"stream",n:"Flowing water",e:"💧",dv:.15},{k:"birds",n:"Distant birds",e:"🐦",dv:.08},{k:"wind",n:"Forest breeze",e:"🍃",dv:.1},{k:"bowl",n:"Singing bowl",e:"🔔",dv:.08}]},
   {id:"meditate",name:"Meditate",sub:"Still the mind, find the center",icon:"◎",grad:"linear-gradient(135deg,#E6E0D6,#C8BAA8)",ac:"#9E8E78",tag:"Mindfulness",pro:1,
     why:"Singing bowls at specific frequencies entrain brainwaves toward alpha and theta states. Combined with flowing water, they create an ideal anchor for meditation practice.",
-    sounds:[{k:"bowl",n:"Temple gong",e:"🔔",dv:.2},{k:"stream",n:"Flowing water",e:"💧",dv:.3},{k:"drone",n:"Om drone",e:"🕉",dv:.15},{k:"brown",n:"Stillness",e:"🪨",dv:.12},{k:"wind",n:"Breath of air",e:"🍃",dv:.06},{k:"pink",n:"Soft silence",e:"☁️",dv:0}]},
+    sounds:[{k:"bowl",n:"Temple gong",e:"🔔",dv:.2},{k:"stream",n:"Flowing water",e:"💧",dv:.1},{k:"drone",n:"Om drone",e:"🕉",dv:.15},{k:"brown",n:"Stillness",e:"🪨",dv:.12},{k:"wind",n:"Breath of air",e:"🍃",dv:.06},{k:"pink",n:"Soft silence",e:"☁️",dv:0}]},
   {id:"meltdown",name:"Recovery",sub:"Gently come back to yourself",icon:"◌",grad:"linear-gradient(135deg,#E4E6EC,#B8BCC8)",ac:"#8A8EA0",tag:"Meltdown recovery",pro:1,
     why:"Ultra-predictable, low-variation sound helps your brain reorganize after overload. Gradual layering supports gentle sensory re-entry.",
     sounds:[{k:"brown",n:"Deep cocoon",e:"🫧",dv:.5},{k:"drone",n:"Gentle hum",e:"🌀",dv:.2},{k:"pink",n:"Soft wash",e:"☁️",dv:.15},{k:"bowl",n:"Distant bowl",e:"🔔",dv:.1},{k:"wind",n:"Slow breeze",e:"🍃",dv:.1},{k:"heartbeat",n:"Calm pulse",e:"💓",dv:0}]},
@@ -400,6 +400,7 @@ function ensureNode(k){
     audio.preload="auto";
     audio.loop=true;
     audio.src="stream.mp3";
+    audio.volume=Math.min(vols[k]||0,1);
     // Try to play — retry on user interaction if blocked
     function tryPlay(){
       const p=audio.play();
