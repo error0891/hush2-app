@@ -43,7 +43,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
 </head>
 <body>
 
-<!-- SPLASH -->
+<!-- ═══ SPLASH ═══ -->
 <div id="splash" class="screen active" onclick="enterFromSplash()" ontouchend="enterFromSplash()" style="cursor:pointer">
   <div class="blob" style="width:280px;height:280px;left:-60px;top:-40px;background:#9B7FD4"></div>
   <div class="blob" style="width:200px;height:200px;left:60%;top:60%;background:#D4727F;animation-delay:2s"></div>
@@ -55,7 +55,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
   </div>
 </div>
 
-<!-- HOME -->
+<!-- ═══ HOME ═══ -->
 <div id="home" class="screen">
   <div class="blob" style="width:240px;height:240px;left:-50px;top:-30px;background:#9B7FD4"></div>
   <div class="blob" style="width:170px;height:170px;left:65%;top:50%;background:#D4727F;animation-delay:2s"></div>
@@ -86,7 +86,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
   </div>
 </div>
 
-<!-- PAYWALL -->
+<!-- ═══ PAYWALL ═══ -->
 <div id="paywall" class="screen">
   <div class="blob" id="pwBlob1" style="width:280px;height:280px;left:-80px;top:15%"></div>
   <div class="blob" style="width:160px;height:160px;left:70%;top:55%;background:#D4727F;animation-delay:3s"></div>
@@ -109,7 +109,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
   </div>
 </div>
 
-<!-- PLAYER -->
+<!-- ═══ PLAYER ═══ -->
 <div id="player" class="screen">
   <div class="blob" id="plBlob1" style="width:260px;height:260px;left:-70px;top:8%"></div>
   <div class="blob" id="plBlob2" style="width:160px;height:160px;left:65%;top:50%;animation-delay:3s"></div>
@@ -142,13 +142,13 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
   </div>
 </div>
 
-<!-- FEEDBACK BAR -->
+<!-- ═══ FEEDBACK BAR ═══ -->
 <div id="feedbackBar" class="feedback-bar" style="display:none">
   <span style="font-size:11px;color:rgba(245,240,235,.4);font-family:inherit">testing Hush?</span>
   <button class="feedback-btn" onclick="openFeedback()">share feedback</button>
 </div>
 
-<!-- FEEDBACK MODAL -->
+<!-- ═══ FEEDBACK MODAL ═══ -->
 <div id="feedbackModal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:24px">
   <div style="background:linear-gradient(160deg,#1e1528,#1a1225);border-radius:24px;padding:28px 24px;max-width:380px;width:100%;border:1px solid rgba(155,127,212,.15);max-height:80vh;overflow-y:auto">
     <h3 style="font-size:20px;font-weight:400;margin-bottom:4px;text-align:center">share your thoughts</h3>
@@ -178,8 +178,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
 <script>
-// ─── DATA ───────────────────────────────────────────────────────────
+// ═══ MODES — expanded with new sounds & 3 new modes ═══
 const MODES=[
   {id:"focus",name:"Focus",sub:"Quiet the noise",icon:"◎",grad:"linear-gradient(135deg,#E8DFF5,#C4B0F4)",ac:"#9B7FD4",tag:"ADHD-optimized",
     sounds:[{k:"brown",n:"Brown noise",e:"🌊",dv:.5},{k:"rain",n:"Gentle rain",e:"🌧",dv:0},{k:"binaural",n:"Focus pulse",e:"🧠",dv:0},{k:"lofi",n:"Lo-fi chords",e:"🎹",dv:0},{k:"cafe",n:"Cafe murmur",e:"☕",dv:0},{k:"vinyl",n:"Vinyl warmth",e:"💿",dv:0}]},
@@ -198,704 +199,349 @@ const MODES=[
   {id:"meltdown",name:"Recovery",sub:"Gently come back to yourself",icon:"◌",grad:"linear-gradient(135deg,#E0E4ED,#A8B0C8)",ac:"#7A84A0",tag:"Meltdown recovery",
     sounds:[{k:"brown",n:"Deep cocoon",e:"🫧",dv:.6},{k:"drone",n:"Gentle hum",e:"🌀",dv:.2},{k:"pink",n:"Soft wash",e:"☁️",dv:0},{k:"bowl",n:"Distant bowl",e:"🔔",dv:0},{k:"wind",n:"Slow breeze",e:"🍃",dv:0},{k:"heartbeat",n:"Calm pulse",e:"💓",dv:0}]}
 ];
-
 const TIMERS=[{l:"5m",m:5},{l:"15m",m:15},{l:"25m",m:25},{l:"45m",m:45},{l:"1hr",m:60},{l:"∞",m:0}];
 
-// ─── STATE ──────────────────────────────────────────────────────────
-let curMode=null, playing=false, selTimer=5, timeLeft=null, timerInterval=null;
-const vols={}, soundCache={};
+let curMode=null,playing=false,selTimer=5,timeLeft=null,timerInterval=null,audioStarted=false;
+const nodes={},vols={};
 
-// ─── WAV ENCODER ────────────────────────────────────────────────────
-function bufToWav(audioBuffer) {
-  const numCh = audioBuffer.numberOfChannels;
-  const sr = audioBuffer.sampleRate;
-  const len = audioBuffer.length;
-  const bps = 16;
-  const blockAlign = numCh * bps / 8;
-  const byteRate = sr * blockAlign;
-  const dataSize = len * blockAlign;
-  const buf = new ArrayBuffer(44 + dataSize);
-  const v = new DataView(buf);
-  function ws(o, s) { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); }
-  ws(0, 'RIFF');
-  v.setUint32(4, 36 + dataSize, true);
-  ws(8, 'WAVE');
-  ws(12, 'fmt ');
-  v.setUint32(16, 16, true);
-  v.setUint16(20, 1, true);
-  v.setUint16(22, numCh, true);
-  v.setUint32(24, sr, true);
-  v.setUint32(28, byteRate, true);
-  v.setUint16(32, blockAlign, true);
-  v.setUint16(34, bps, true);
-  ws(36, 'data');
-  v.setUint32(40, dataSize, true);
-  const chData = [];
-  for (let c = 0; c < numCh; c++) chData.push(audioBuffer.getChannelData(c));
-  let off = 44;
-  for (let i = 0; i < len; i++) {
-    for (let c = 0; c < numCh; c++) {
-      let s = Math.max(-1, Math.min(1, chData[c][i]));
-      s = s < 0 ? s * 0x8000 : s * 0x7FFF;
-      v.setInt16(off, s, true);
-      off += 2;
-    }
+// ═══ AUDIO ENGINE ═══
+// Mobile-safe: always try to unlock on any user gesture
+async function initAudio(){
+  try{await Tone.start();audioStarted=true}catch(e){console.warn('Tone.start failed',e)}
+  if(Tone.context.state==='suspended'){try{await Tone.context.resume()}catch(e){console.warn('resume failed',e)}}
+  // iOS workaround: play a silent buffer to fully unlock
+  if(!window._silentPlayed){
+    try{const b=Tone.context.createBuffer(1,1,22050);const s=Tone.context.createBufferSource();s.buffer=b;s.connect(Tone.context.rawContext.destination);s.start(0);window._silentPlayed=true}catch(e){}
   }
-  return new Blob([buf], { type: 'audio/wav' });
 }
 
-// ─── PINK NOISE HELPER (Voss-McCartney) ─────────────────────────────
-function genPink(length) {
-  const data = new Float32Array(length);
-  const R = 8;
-  const rv = new Float32Array(R);
-  let sum = 0;
-  for (let r = 0; r < R; r++) { rv[r] = Math.random() * 2 - 1; sum += rv[r]; }
-  for (let i = 0; i < length; i++) {
-    let k = i;
-    for (let r = 0; r < R; r++) {
-      if ((k & 1) === 0) { sum -= rv[r]; rv[r] = Math.random() * 2 - 1; sum += rv[r]; break; }
-      k >>= 1;
-    }
-    data[i] = (sum / R) * 0.5;
+function ensureNode(k){
+  if(nodes[k])return;
+  const g=new Tone.Gain(0).toDestination();
+
+  if(k==="brown"){
+    const s=new Tone.Noise("brown");const f=new Tone.Filter(800,"lowpass");s.connect(f);f.connect(g);s.start()
   }
-  return data;
-}
-
-// ─── BROWN NOISE HELPER ─────────────────────────────────────────────
-function genBrown(length) {
-  const data = new Float32Array(length);
-  let val = 0;
-  for (let i = 0; i < length; i++) {
-    val += (Math.random() * 2 - 1) * 0.02;
-    if (val > 1) val = 1; if (val < -1) val = -1;
-    data[i] = val;
+  else if(k==="pink"){
+    const s=new Tone.Noise("pink");s.connect(g);s.start()
   }
-  return data;
-}
-
-// ─── HELPERS ────────────────────────────────────────────────────────
-function makeImpulse(ctx, decay, sr, len) {
-  // Generate convolver reverb impulse response
-  const imp = ctx.createBuffer(2, len, sr);
-  for (let ch = 0; ch < 2; ch++) {
-    const d = imp.getChannelData(ch);
-    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (sr * decay));
+  else if(k==="white"){
+    const s=new Tone.Noise("white");const f=new Tone.Filter(2000,"lowpass");s.connect(f);f.connect(g);s.start()
   }
-  return imp;
-}
-function noiseBuf(ctx, gen, sr, dur) {
-  // Create stereo noise buffer with slight L/R variation for width
-  const ab = ctx.createBuffer(2, sr * dur, sr);
-  ab.getChannelData(0).set(gen(sr * dur));
-  ab.getChannelData(1).set(gen(sr * dur)); // different random seed = natural stereo
-  return ab;
-}
-
-// ─── OFFLINE RENDER ─────────────────────────────────────────────────
-async function renderSound(key) {
-  if (soundCache[key]) return soundCache[key];
-
-  const sr = 44100;
-  let dur;
-  if (key === 'bowl') dur = 32;
-  else if (key === 'lofi') dur = 32;
-  else if (key === 'heartbeat') dur = 4;
-  else dur = 12;
-
-  // All sounds render in stereo for richness
-  const ctx = new OfflineAudioContext(2, sr * dur, sr);
-
-  switch (key) {
-    case 'brown': {
-      const ab = noiseBuf(ctx, genBrown, sr, dur);
-      const src = ctx.createBufferSource(); src.buffer = ab;
-      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 800;
-      // Gentle shelf boost for warmth
-      const ls = ctx.createBiquadFilter(); ls.type = 'lowshelf'; ls.frequency.value = 200; ls.gain.value = 4;
-      src.connect(lp); lp.connect(ls); ls.connect(ctx.destination); src.start(0);
-      break;
-    }
-    case 'pink': {
-      const ab = noiseBuf(ctx, genPink, sr, dur);
-      const src = ctx.createBufferSource(); src.buffer = ab;
-      // Slight warmth
-      const ls = ctx.createBiquadFilter(); ls.type = 'lowshelf'; ls.frequency.value = 300; ls.gain.value = 2;
-      src.connect(ls); ls.connect(ctx.destination); src.start(0);
-      break;
-    }
-    case 'white': {
-      const ab = noiseBuf(ctx, n => { const d = new Float32Array(n); for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1; return d; }, sr, dur);
-      const src = ctx.createBufferSource(); src.buffer = ab;
-      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2000;
-      src.connect(lp); lp.connect(ctx.destination); src.start(0);
-      break;
-    }
-    case 'binaural': {
-      // True stereo: left ear 200Hz, right ear 240Hz → 40Hz binaural beat
-      const merger = ctx.createChannelMerger(2);
-      const oscL = ctx.createOscillator(); oscL.type = 'sine'; oscL.frequency.value = 200;
-      const gL = ctx.createGain(); gL.gain.value = 0.5;
-      oscL.connect(gL); gL.connect(merger, 0, 0);
-      const oscR = ctx.createOscillator(); oscR.type = 'sine'; oscR.frequency.value = 240;
-      const gR = ctx.createGain(); gR.gain.value = 0.5;
-      oscR.connect(gR); gR.connect(merger, 0, 1);
-      merger.connect(ctx.destination);
-      oscL.start(0); oscR.start(0);
-      break;
-    }
-    case 'drone': {
-      // Rich drone: fundamental + 5th + sub with reverb
-      const conv = ctx.createConvolver();
-      conv.buffer = makeImpulse(ctx, 3.0, sr, sr * 4);
-      const wet = ctx.createGain(); wet.gain.value = 0.6;
-      const dry = ctx.createGain(); dry.gain.value = 0.4;
-      conv.connect(wet); wet.connect(ctx.destination);
-
-      // C2 fundamental
-      const o1 = ctx.createOscillator(); o1.type = 'sine'; o1.frequency.value = 65.41;
-      const g1 = ctx.createGain(); g1.gain.value = 0.5;
-      o1.connect(g1); g1.connect(conv); g1.connect(dry); o1.start(0);
-      // G2 fifth (subtle)
-      const o2 = ctx.createOscillator(); o2.type = 'sine'; o2.frequency.value = 98.0;
-      const g2 = ctx.createGain(); g2.gain.value = 0.15;
-      o2.connect(g2); g2.connect(conv); g2.connect(dry); o2.start(0);
-      // Sub octave
-      const o3 = ctx.createOscillator(); o3.type = 'sine'; o3.frequency.value = 32.7;
-      const g3 = ctx.createGain(); g3.gain.value = 0.2;
-      o3.connect(g3); g3.connect(dry); o3.start(0);
-      dry.connect(ctx.destination);
-      break;
-    }
-    case 'vinyl': {
-      // Vinyl crackle: white noise with bandpass + subtle low-frequency warble
-      const ab = noiseBuf(ctx, n => { const d = new Float32Array(n); for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1; return d; }, sr, dur);
-      const src = ctx.createBufferSource(); src.buffer = ab;
-      const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 800; bp.Q.value = 0.5;
-      // Add a subtle LFO wobble on the filter
-      const lfo = ctx.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 0.3;
-      const lfoG = ctx.createGain(); lfoG.gain.value = 200;
-      lfo.connect(lfoG); lfoG.connect(bp.frequency); lfo.start(0);
-      src.connect(bp); bp.connect(ctx.destination); src.start(0);
-      break;
-    }
-    case 'rain': {
-      // Rain: pink noise + bandpass with LFO sweep for patter variation
-      const ab = noiseBuf(ctx, genPink, sr, dur);
-      const src = ctx.createBufferSource(); src.buffer = ab;
-      const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 3000; bp.Q.value = 0.3;
-      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 6000;
-      // LFO sweeps the bandpass for natural rain variation
-      const lfo = ctx.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 0.15;
-      const lfoG = ctx.createGain(); lfoG.gain.value = 1500;
-      lfo.connect(lfoG); lfoG.connect(bp.frequency); lfo.start(0);
-      // Second layer: deeper rumble
-      const ab2 = noiseBuf(ctx, genBrown, sr, dur);
-      const src2 = ctx.createBufferSource(); src2.buffer = ab2;
-      const lp2 = ctx.createBiquadFilter(); lp2.type = 'lowpass'; lp2.frequency.value = 400;
-      const g2 = ctx.createGain(); g2.gain.value = 0.25;
-      src2.connect(lp2); lp2.connect(g2); g2.connect(ctx.destination); src2.start(0);
-
-      src.connect(bp); bp.connect(lp); lp.connect(ctx.destination); src.start(0);
-      break;
-    }
-    case 'wind': {
-      // Wind: brown noise with slow LFO on bandpass for gusting
-      const ab = noiseBuf(ctx, genBrown, sr, dur);
-      const src = ctx.createBufferSource(); src.buffer = ab;
-      const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 600; bp.Q.value = 0.8;
-      // Slow gust LFO
-      const lfo = ctx.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 0.08;
-      const lfoG = ctx.createGain(); lfoG.gain.value = 400;
-      lfo.connect(lfoG); lfoG.connect(bp.frequency); lfo.start(0);
-      // Subtle volume swell for gusts
-      const volLfo = ctx.createOscillator(); volLfo.type = 'sine'; volLfo.frequency.value = 0.06;
-      const volG = ctx.createGain(); volG.gain.value = 0.3;
-      const master = ctx.createGain(); master.gain.value = 0.7;
-      volLfo.connect(volG); volG.connect(master.gain); volLfo.start(0);
-      src.connect(bp); bp.connect(master); master.connect(ctx.destination); src.start(0);
-      break;
-    }
-    case 'cafe': {
-      // Cafe: layered pink noise (murmur) + white noise (clinks) + slight reverb
-      const conv = ctx.createConvolver();
-      conv.buffer = makeImpulse(ctx, 1.0, sr, sr * 2);
-      const wet = ctx.createGain(); wet.gain.value = 0.3;
-      conv.connect(wet); wet.connect(ctx.destination);
-
-      const ab1 = noiseBuf(ctx, genPink, sr, dur);
-      const src1 = ctx.createBufferSource(); src1.buffer = ab1;
-      const bp1 = ctx.createBiquadFilter(); bp1.type = 'bandpass'; bp1.frequency.value = 1200; bp1.Q.value = 0.4;
-      src1.connect(bp1); bp1.connect(conv); bp1.connect(ctx.destination); src1.start(0);
-
-      // High-freq clink layer
-      const ab2 = noiseBuf(ctx, n => { const d = new Float32Array(n); for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1; return d; }, sr, dur);
-      const src2 = ctx.createBufferSource(); src2.buffer = ab2;
-      const bp2 = ctx.createBiquadFilter(); bp2.type = 'bandpass'; bp2.frequency.value = 3500; bp2.Q.value = 1.5;
-      const g2 = ctx.createGain(); g2.gain.value = 0.12;
-      // LFO on clink volume for naturalness
-      const lfo = ctx.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 0.2;
-      const lfoG = ctx.createGain(); lfoG.gain.value = 0.1;
-      lfo.connect(lfoG); lfoG.connect(g2.gain); lfo.start(0);
-      src2.connect(bp2); bp2.connect(g2); g2.connect(conv); src2.start(0);
-      break;
-    }
-    case 'crackling': {
-      // Fireplace: sparse crackles + warm low rumble
-      const ab = ctx.createBuffer(2, sr * dur, sr);
-      for (let ch = 0; ch < 2; ch++) {
-        const d = ab.getChannelData(ch);
-        for (let i = 0; i < d.length; i++) {
-          const r = Math.random();
-          d[i] = r > 0.985 ? (Math.random() * 2 - 1) * 0.9
-               : r > 0.97 ? (Math.random() * 2 - 1) * 0.3
-               : (Math.random() - 0.5) * 0.02;
-        }
-      }
-      const src = ctx.createBufferSource(); src.buffer = ab;
-      const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2000; bp.Q.value = 0.8;
-      // Warm base layer
-      const ab2 = noiseBuf(ctx, genBrown, sr, dur);
-      const src2 = ctx.createBufferSource(); src2.buffer = ab2;
-      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 300;
-      const g2 = ctx.createGain(); g2.gain.value = 0.3;
-      src2.connect(lp); lp.connect(g2); g2.connect(ctx.destination); src2.start(0);
-      // Light reverb on crackles
-      const conv = ctx.createConvolver();
-      conv.buffer = makeImpulse(ctx, 0.5, sr, sr * 1);
-      const cg = ctx.createGain(); cg.gain.value = 0.4;
-      src.connect(bp); bp.connect(conv); conv.connect(cg); cg.connect(ctx.destination);
-      bp.connect(ctx.destination); // dry too
-      src.start(0);
-      break;
-    }
-    case 'heartbeat': {
-      // Richer heartbeat: sub sine + filtered thump with body
-      const conv = ctx.createConvolver();
-      conv.buffer = makeImpulse(ctx, 0.3, sr, sr * 1);
-      const cg = ctx.createGain(); cg.gain.value = 0.4;
-      conv.connect(cg); cg.connect(ctx.destination);
-
-      // 4 beats over 4 seconds (2 double-beats at 60bpm)
-      [0, 0.22, 1.0, 1.22, 2.0, 2.22, 3.0, 3.22].forEach((t, i) => {
-        const isFirst = i % 2 === 0;
-        const osc = ctx.createOscillator(); osc.type = 'sine'; osc.frequency.value = isFirst ? 50 : 65;
-        const g = ctx.createGain();
-        g.gain.setValueAtTime(0, t);
-        g.gain.linearRampToValueAtTime(isFirst ? 0.9 : 0.5, t + 0.015);
-        g.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
-        osc.connect(g); g.connect(conv); g.connect(ctx.destination);
-        osc.start(t); osc.stop(t + 0.4);
-      });
-      break;
-    }
-    case 'bowl': {
-      // Singing bowl: sine fundamentals + harmonics with long reverb tail
-      const conv = ctx.createConvolver();
-      conv.buffer = makeImpulse(ctx, 5.0, sr, sr * 6);
-      const wet = ctx.createGain(); wet.gain.value = 0.7;
-      conv.connect(wet); wet.connect(ctx.destination);
-
-      const notes = [392, 493.88, 587.33, 783.99, 440, 523.25, 659.25, 392];
-      notes.forEach((freq, i) => {
-        const t = i * 4;
-        if (t >= dur) return;
-        // Fundamental
-        const o1 = ctx.createOscillator(); o1.type = 'sine'; o1.frequency.value = freq;
-        const g1 = ctx.createGain();
-        g1.gain.setValueAtTime(0, t);
-        g1.gain.linearRampToValueAtTime(0.25, t + 0.15);
-        g1.gain.exponentialRampToValueAtTime(0.001, t + 3.8);
-        o1.connect(g1); g1.connect(conv); g1.connect(ctx.destination);
-        o1.start(t); o1.stop(t + 4);
-        // Harmonic (2nd partial, quieter)
-        const o2 = ctx.createOscillator(); o2.type = 'sine'; o2.frequency.value = freq * 2.01;
-        const g2 = ctx.createGain();
-        g2.gain.setValueAtTime(0, t);
-        g2.gain.linearRampToValueAtTime(0.08, t + 0.1);
-        g2.gain.exponentialRampToValueAtTime(0.001, t + 2.5);
-        o2.connect(g2); g2.connect(conv);
-        o2.start(t); o2.stop(t + 3);
-        // 3rd partial (very subtle shimmer)
-        const o3 = ctx.createOscillator(); o3.type = 'sine'; o3.frequency.value = freq * 3.02;
-        const g3 = ctx.createGain();
-        g3.gain.setValueAtTime(0, t);
-        g3.gain.linearRampToValueAtTime(0.03, t + 0.05);
-        g3.gain.exponentialRampToValueAtTime(0.001, t + 1.5);
-        o3.connect(g3); g3.connect(conv);
-        o3.start(t); o3.stop(t + 2);
-      });
-      break;
-    }
-    case 'lofi': {
-      // Lo-fi: triangle chords through lowpass + reverb, with vinyl layer
-      const conv = ctx.createConvolver();
-      conv.buffer = makeImpulse(ctx, 2.5, sr, sr * 3);
-      const wet = ctx.createGain(); wet.gain.value = 0.5;
-      const flp = ctx.createBiquadFilter(); flp.type = 'lowpass'; flp.frequency.value = 1200;
-      conv.connect(flp); flp.connect(wet); wet.connect(ctx.destination);
-
-      const chords = [
-        [293.66,349.23,440,523.25],[196,246.94,293.66,349.23],
-        [261.63,329.63,392,493.88],[220,261.63,329.63,392],
-        [293.66,349.23,440,523.25],[246.94,311.13,369.99,493.88],
-        [261.63,329.63,392,493.88],[220,277.18,329.63,440]
-      ];
-      chords.forEach((chord, ci) => {
-        const t = ci * 4;
-        if (t >= dur) return;
-        chord.forEach(freq => {
-          const osc = ctx.createOscillator(); osc.type = 'triangle'; osc.frequency.value = freq;
-          const g = ctx.createGain();
-          g.gain.setValueAtTime(0, t);
-          g.gain.linearRampToValueAtTime(0.07, t + 0.4);
-          g.gain.setValueAtTime(0.06, t + 2.0);
-          g.gain.exponentialRampToValueAtTime(0.001, t + 3.8);
-          osc.connect(g); g.connect(conv); g.connect(ctx.destination);
-          osc.start(t); osc.stop(t + 4);
-        });
-      });
-      // Subtle vinyl crackle layer baked in
-      const vab = noiseBuf(ctx, n => { const d = new Float32Array(n); for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1; return d; }, sr, dur);
-      const vs = ctx.createBufferSource(); vs.buffer = vab;
-      const vbp = ctx.createBiquadFilter(); vbp.type = 'bandpass'; vbp.frequency.value = 900; vbp.Q.value = 0.6;
-      const vg = ctx.createGain(); vg.gain.value = 0.04;
-      vs.connect(vbp); vbp.connect(vg); vg.connect(ctx.destination); vs.start(0);
-      break;
-    }
+  else if(k==="binaural"){
+    const l=new Tone.Oscillator(200,"sine"),r=new Tone.Oscillator(240,"sine"),pl=new Tone.Panner(-1),pr=new Tone.Panner(1);
+    l.connect(pl);pl.connect(g);r.connect(pr);pr.connect(g);l.start();r.start()
+  }
+  else if(k==="drone"){
+    const s=new Tone.Synth({oscillator:{type:"sine"},envelope:{attack:2,decay:0,sustain:1,release:4}});
+    const rv=new Tone.Reverb({decay:8,wet:.7});s.connect(rv);rv.connect(g);s.triggerAttack("C2")
+  }
+  else if(k==="lofi"){
+    const rv=new Tone.Reverb({decay:3,wet:.5}),fl=new Tone.Filter(1200,"lowpass");rv.connect(fl);fl.connect(g);
+    const sy=new Tone.PolySynth(Tone.Synth,{maxPolyphony:8,options:{oscillator:{type:"triangle"},envelope:{attack:.3,decay:.8,sustain:.4,release:1.5},volume:-12}});sy.connect(rv);
+    const ch=[["D4","F4","A4","C5"],["G3","B3","D4","F4"],["C4","E4","G4","B4"],["A3","C4","E4","G4"]];
+    let i=0;const lp=new Tone.Loop(t=>{sy.triggerAttackRelease(ch[i%4],"2n",t);i++},"1m");
+    Tone.getTransport().bpm.value=75;lp.start(0)
+  }
+  else if(k==="vinyl"){
+    const s=new Tone.Noise("white");const f=new Tone.Filter({frequency:800,type:"bandpass",Q:.5});s.connect(f);f.connect(g);s.start()
+  }
+  // ── NEW SOUNDS ──
+  else if(k==="rain"){
+    // Rain: pink noise through bandpass + LFO for patter variation
+    const s=new Tone.Noise("pink");
+    const bp=new Tone.Filter({frequency:3000,type:"bandpass",Q:0.3});
+    const lp2=new Tone.Filter(5000,"lowpass");
+    const lfo=new Tone.LFO({frequency:.15,min:1800,max:4500}).start();
+    lfo.connect(bp.frequency);
+    s.connect(bp);bp.connect(lp2);lp2.connect(g);s.start()
+  }
+  else if(k==="wind"){
+    // Wind: brown noise with slow LFO on filter for gusts
+    const s=new Tone.Noise("brown");
+    const bp=new Tone.Filter({frequency:600,type:"bandpass",Q:0.8});
+    const lfo=new Tone.LFO({frequency:.08,min:300,max:1200}).start();
+    lfo.connect(bp.frequency);
+    s.connect(bp);bp.connect(g);s.start()
+  }
+  else if(k==="heartbeat"){
+    // Heartbeat: sub-bass kick at ~60bpm
+    const sy=new Tone.MembraneSynth({pitchDecay:.08,octaves:4,envelope:{attack:.01,decay:.3,sustain:0,release:.4},volume:-8});
+    const lp2=new Tone.Filter(120,"lowpass");sy.connect(lp2);lp2.connect(g);
+    const lp3=new Tone.Loop(t=>{sy.triggerAttackRelease("C1","8n",t);sy.triggerAttackRelease("C1","8n",t+0.25)},"2n");
+    Tone.getTransport().bpm.value=75;lp3.start(0)
+  }
+  else if(k==="crackling"){
+    // Fireplace crackling: filtered white noise bursts
+    const s=new Tone.Noise("white");
+    const bp=new Tone.Filter({frequency:2500,type:"bandpass",Q:2});
+    const ag=new Tone.Gain(0);
+    const lfo=new Tone.LFO({frequency:6,min:0,max:.8,type:"square"}).start();
+    // Random modulation for crackle effect
+    const lfo2=new Tone.LFO({frequency:.5,min:3,max:12}).start();
+    lfo2.connect(lfo.frequency);
+    lfo.connect(ag.gain);
+    s.connect(bp);bp.connect(ag);ag.connect(g);s.start()
+  }
+  else if(k==="bowl"){
+    // Singing bowl: sine with slow attack and long reverb
+    const rv=new Tone.Reverb({decay:12,wet:.8});rv.connect(g);
+    const sy=new Tone.Synth({oscillator:{type:"sine"},envelope:{attack:2,decay:4,sustain:.3,release:6},volume:-10});
+    sy.connect(rv);
+    // Ring every ~8 seconds with slight pitch variation
+    const notes=["G4","B4","D5","G5"];let ni=0;
+    const lp2=new Tone.Loop(t=>{sy.triggerAttackRelease(notes[ni%4],"4n",t);ni++},"8n");
+    // Slow loop: one strike every 8 seconds
+    const lp3=new Tone.Loop(t=>{sy.triggerAttackRelease(notes[ni%4],3,t);ni++},8);
+    lp3.start(0)
+  }
+  else if(k==="cafe"){
+    // Cafe: layered filtered noises for ambient chatter + clinks
+    const s1=new Tone.Noise("pink");
+    const bp1=new Tone.Filter({frequency:1200,type:"bandpass",Q:.4});
+    const s2=new Tone.Noise("white");
+    const bp2=new Tone.Filter({frequency:3000,type:"bandpass",Q:1.5});
+    const g2=new Tone.Gain(.15);
+    const lfo=new Tone.LFO({frequency:.2,min:.05,max:.25}).start();
+    lfo.connect(g2.gain);
+    s1.connect(bp1);bp1.connect(g);s1.start();
+    s2.connect(bp2);bp2.connect(g2);g2.connect(g);s2.start()
   }
 
-  const rendered = await ctx.startRendering();
-  // Crossfade the loop point for seamless looping (1s fade for longer loops)
-  const fadeSec = dur >= 16 ? 1.5 : 0.8;
-  const fadeLen = Math.min(Math.floor(sr * fadeSec), rendered.length / 4);
-  for (let ch = 0; ch < rendered.numberOfChannels; ch++) {
-    const d = rendered.getChannelData(ch);
-    for (let i = 0; i < fadeLen; i++) {
-      const t = i / fadeLen; // 0→1
-      // Fade out end
-      d[d.length - fadeLen + i] *= (1 - t);
-      // Mix end into beginning (crossfade)
-      d[i] = d[i] * t + d[d.length - fadeLen + i] * (1 - t);
-    }
-  }
-  const wavBlob = bufToWav(rendered);
-  const blobUrl = URL.createObjectURL(wavBlob);
-  const audio = new Audio(blobUrl);
-  audio.loop = true;
-  audio.volume = 0;
-  soundCache[key] = { audio, blobUrl };
-  return soundCache[key];
+  nodes[k]={g}
 }
 
-// ─── NAVIGATION ─────────────────────────────────────────────────────
-let splashDone = false;
-function enterFromSplash() {
-  if (splashDone) return;
-  splashDone = true;
-  showScreen('home');
+function setVol(k,v){vols[k]=v;if(nodes[k])nodes[k].g.gain.rampTo(v,.5)}
+function startTransport(){if(Tone.getTransport().state!=="started")Tone.getTransport().start()}
+function stopAll(){
+  Object.keys(nodes).forEach(k=>nodes[k].g.gain.rampTo(0,.3));
+  setTimeout(()=>Tone.getTransport().stop(),400);
+  playing=false;clearInterval(timerInterval);timeLeft=null;updatePlayUI()
 }
 
-function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+// ═══ SCREENS ═══
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
-  document.getElementById('feedbackBar').style.display = (id === 'home' || id === 'player') ? 'flex' : 'none';
+  // Show feedback bar on home and player screens
+  document.getElementById('feedbackBar').style.display=(id==='home'||id==='player')?'flex':'none';
 }
 
-function getGreeting() {
-  const h = new Date().getHours();
-  if (h < 5) return 'good night';
-  if (h < 12) return 'good morning';
-  if (h < 17) return 'good afternoon';
-  return 'good evening';
+// ═══ HOME ═══
+function getGreeting(){
+  const h=new Date().getHours();
+  if(h<5)return"still up?";if(h<12)return"good morning";if(h<17)return"good afternoon";if(h<21)return"good evening";return"winding down?"
 }
 
-// ─── HOME ───────────────────────────────────────────────────────────
-function buildHome() {
-  document.getElementById('greeting').textContent = getGreeting();
-  const grid = document.getElementById('modeGrid');
-  grid.innerHTML = '';
-  MODES.forEach((m, i) => {
-    const d = document.createElement('div');
-    d.className = 'mode-card';
-    d.style.background = m.grad;
-    d.style.animation = `fU .6s ease-out ${0.15 + i * 0.05}s both`;
-    d.onclick = () => openMode(i);
-    d.innerHTML = `
-      <div style="font-size:24px;margin-bottom:6px;opacity:.7">${m.icon}</div>
-      <div style="color:#1a1520;font-size:14px;font-weight:500;margin-bottom:2px">${m.name}</div>
-      <div style="color:rgba(26,21,32,.5);font-size:11px;margin-bottom:8px">${m.sub}</div>
-      <div class="tag" style="background:rgba(26,21,32,.08);color:rgba(26,21,32,.5);margin-top:auto">${m.tag}</div>
-      ${m.pro ? '<div class="tag" style="background:rgba(26,21,32,.12);color:rgba(26,21,32,.6);position:absolute;top:10px;right:10px">PRO</div>' : ''}
-    `;
-    grid.appendChild(d);
+function buildHome(){
+  document.getElementById('greeting').textContent=getGreeting();
+  const g=document.getElementById('modeGrid');g.innerHTML='';
+  MODES.forEach((m,i)=>{
+    const d=document.createElement('div');d.className='mode-card';d.style.background=m.grad;
+    d.style.animation=`sU .5s ease-out ${.08+i*.06}s both`;
+    d.innerHTML=`<div class="tag" style="color:${m.ac};background:${m.ac}15;align-self:flex-start;margin-bottom:8px">${m.tag}</div>
+      <div style="font-size:15px;font-weight:500;color:${m.ac}">${m.name.toLowerCase()}</div>
+      <div style="font-size:10px;color:${m.ac}90;margin-top:3px;line-height:1.3;font-style:italic">${m.sub}</div>
+      <div style="position:absolute;right:12px;bottom:10px;font-size:24px;color:${m.ac}25">${m.icon}</div>
+      ${m.pro?`<div style="position:absolute;top:10px;right:10px;font-size:8px;color:${m.ac};background:${m.ac}18;padding:2px 6px;border-radius:4px;font-family:system-ui;font-weight:600">PRO</div>`:''}`;
+    d.onclick=()=>openMode(i);g.appendChild(d)
+  })
+}
+
+function openMode(i){
+  curMode=MODES[i];
+  if(curMode.pro){showPaywall();return}
+  enterPlayer()
+}
+
+function showPaywall(){
+  const m=curMode;
+  document.getElementById('pwBlob1').style.background=m.ac;
+  document.getElementById('pwOrb').style.background=`radial-gradient(circle at 35% 35%,${m.ac}60,${m.ac})`;
+  document.getElementById('pwOrb').style.boxShadow=`0 0 50px ${m.ac}35`;
+  document.getElementById('pwTitle').textContent='unlock '+m.name.toLowerCase();
+  document.getElementById('pwSub').textContent=m.sub;
+  document.getElementById('pwCta').style.background=m.ac;
+  document.getElementById('pwCta').style.boxShadow=`0 8px 28px ${m.ac}40`;
+  const feats=["Cycle-synced sound therapy","Period pain relief tones","Guided breathing overlays","Unlimited sound mixing","Personal sound profile"];
+  document.getElementById('pwFeatures').innerHTML=feats.map(f=>`<div class="check"><div style="width:22px;height:22px;border-radius:50%;background:${m.ac}20;display:flex;align-items:center;justify-content:center;font-size:10px;color:${m.ac};flex-shrink:0">✓</div><span style="font-size:13px;color:rgba(245,240,235,.7)">${f}</span></div>`).join('');
+  showScreen('paywall')
+}
+function enterPlayerFromPw(){enterPlayer()}
+
+function enterPlayer(){
+  const m=curMode;
+  Object.keys(nodes).forEach(k=>{try{nodes[k].g.gain.rampTo(0,.1)}catch(e){}});
+  m.sounds.forEach(s=>{vols[s.k]=s.dv});
+  playing=false;timeLeft=null;clearInterval(timerInterval);
+
+  const pl=document.getElementById('player');
+  pl.style.setProperty('--ac',m.ac);
+  document.getElementById('plBlob1').style.background=m.ac;
+  document.getElementById('plBlob2').style.background=m.ac;
+  document.getElementById('plTag').textContent=m.tag;
+  document.getElementById('plTag').style.cssText=`font-size:9px;color:${m.ac};background:${m.ac}12;padding:4px 10px;border-radius:8px;font-family:system-ui;font-weight:600;letter-spacing:.05em`;
+  document.getElementById('plOrb').style.background=`radial-gradient(circle at 40% 35%,${m.ac}60,${m.ac}40,${m.ac}10)`;
+  document.getElementById('plName').textContent=m.name.toLowerCase();
+
+  const sc=document.getElementById('plSounds');sc.innerHTML='';
+  m.sounds.forEach(s=>{
+    const v=vols[s.k]||0;const on=v>0;
+    const row=document.createElement('div');row.className='snd-row'+(on?' on':'');row.id='sr-'+s.k;
+    row.innerHTML=`<span style="font-size:20px;width:28px;text-align:center;filter:${on?'none':'grayscale(1) opacity(.35)'};transition:filter .3s">${s.e}</span>
+      <div style="flex:1"><div style="font-size:12px;font-weight:500;color:${on?'#F5F0EB':'rgba(245,240,235,.3)'};transition:color .3s">${s.n}</div>
+      <input type="range" min="0" max="100" value="${Math.round(v*100)}" oninput="onSlider('${s.k}',this.value,${MODES.indexOf(m)})" style="background:linear-gradient(to right,${m.ac} ${v*100}%,rgba(255,255,255,.08) ${v*100}%)"></div>
+      <div style="font-size:10px;color:${on?m.ac:'rgba(245,240,235,.2)'};min-width:28px;text-align:right;font-family:system-ui;font-weight:500" id="vl-${s.k}">${Math.round(v*100)}%</div>`;
+    sc.appendChild(row)
+  });
+
+  const tc=document.getElementById('plTimers');tc.innerHTML='';
+  TIMERS.forEach((t,i)=>{
+    const b=document.createElement('button');b.className='timer-btn'+(i===selTimer?' sel':'');
+    b.textContent=t.l;b.onclick=()=>{selTimer=i;document.querySelectorAll('.timer-btn').forEach((x,j)=>x.classList.toggle('sel',j===i));
+      if(playing&&t.m>0){timeLeft=t.m*60}else if(t.m===0){timeLeft=null}};
+    tc.appendChild(b)
+  });
+
+  updatePlayUI();showScreen('player')
+}
+
+function onSlider(k,val,mi){
+  const v=val/100;vols[k]=v;const on=v>0;const m=MODES[mi];
+  if(playing)setVol(k,v);
+  const row=document.getElementById('sr-'+k);
+  row.className='snd-row'+(on?' on':'');
+  row.querySelector('span').style.filter=on?'none':'grayscale(1) opacity(.35)';
+  row.querySelector('div > div').style.color=on?'#F5F0EB':'rgba(245,240,235,.3)';
+  row.querySelector('input').style.background=`linear-gradient(to right,${m.ac} ${v*100}%,rgba(255,255,255,.08) ${v*100}%)`;
+  document.getElementById('vl-'+k).textContent=Math.round(v*100)+'%';
+  document.getElementById('vl-'+k).style.color=on?m.ac:'rgba(245,240,235,.2)';
+  updatePlayUI()
+}
+
+async function togglePlay(){
+  // Always try to unlock audio on every tap (mobile requires user gesture)
+  await initAudio();
+  if(!playing){
+    // Double-check context is running
+    if(Tone.context.state!=='running'){try{await Tone.context.resume()}catch(e){}}
+    // Small delay for iOS to fully unlock
+    await new Promise(r=>setTimeout(r,100));
+    curMode.sounds.forEach(s=>{ensureNode(s.k);setVol(s.k,vols[s.k]||0)});
+    startTransport();playing=true;
+    if(TIMERS[selTimer].m>0){timeLeft=TIMERS[selTimer].m*60;startTimer()}
+  }else{stopAll()}
+  updatePlayUI()
+}
+
+function startTimer(){
+  clearInterval(timerInterval);
+  timerInterval=setInterval(()=>{
+    if(timeLeft>0){timeLeft--;updatePlayUI()}
+    else if(timeLeft===0){stopAll()}
+  },1000)
+}
+
+function updatePlayUI(){
+  if(!curMode)return;const m=curMode;
+  const actives=m.sounds.filter(s=>(vols[s.k]||0)>0).length;
+  let status=actives+' sound'+(actives!==1?'s':'')+' active';
+  if(timeLeft!=null)status+=' · '+Math.floor(timeLeft/60)+':'+(timeLeft%60).toString().padStart(2,'0');
+  document.getElementById('plStatus').textContent=status;
+
+  const orb=document.getElementById('plOrb');
+  const ring=document.getElementById('plOrbRing');
+  const pls=document.getElementById('plPulse');
+  orb.style.boxShadow=playing?`0 0 70px ${m.ac}28`:'none';
+  orb.style.animation=playing?'br 6s ease-in-out infinite':'none';
+  ring.style.display=playing?'block':'none';
+  ring.style.borderColor=playing?m.ac+'18':'transparent';
+  ring.style.animation=playing?'br 6s ease-in-out infinite reverse':'none';
+  pls.style.display=playing?'block':'none';
+  pls.style.background=m.ac;
+
+  const btn=document.getElementById('playBtn');
+  btn.style.background=playing?m.ac:`linear-gradient(135deg,${m.ac},${m.ac}CC)`;
+  btn.style.boxShadow=playing?`0 0 36px ${m.ac}45`:`0 4px 14px ${m.ac}28`;
+  btn.innerHTML=playing?'<div style="display:flex;gap:4px"><div style="width:3.5px;height:18px;background:#fff;border-radius:2px"></div><div style="width:3.5px;height:18px;background:#fff;border-radius:2px"></div></div>'
+    :'<div style="width:0;height:0;border-left:12px solid #fff;border-top:9px solid transparent;border-bottom:9px solid transparent;margin-left:2px"></div>';
+  document.getElementById('plHint').textContent=playing?'playing · tap to pause':'tap to play · use headphones for best experience';
+}
+
+// ═══ FEEDBACK SYSTEM ═══
+const fbTagOptions=["Woman","Neurodivergent","ADHD","Autistic","Anxious","Student","Professional","Parent","Other"];
+const fbPayOptions=["Definitely","Maybe","Not sure","No"];
+let fbSelectedTags=[], fbSelectedPay="";
+
+function openFeedback(){
+  document.getElementById('feedbackModal').style.display='flex';
+  // Build tag buttons
+  const tc=document.getElementById('fbTags');tc.innerHTML='';
+  fbTagOptions.forEach(t=>{
+    const b=document.createElement('button');
+    b.textContent=t;b.dataset.tag=t;
+    b.style.cssText=`padding:6px 12px;border-radius:16px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:rgba(245,240,235,.5);font-size:11px;cursor:pointer;font-family:inherit;transition:all .2s`;
+    b.onclick=()=>{
+      if(fbSelectedTags.includes(t)){fbSelectedTags=fbSelectedTags.filter(x=>x!==t);b.style.borderColor='rgba(255,255,255,.08)';b.style.background='rgba(255,255,255,.04)';b.style.color='rgba(245,240,235,.5)'}
+      else{fbSelectedTags.push(t);b.style.borderColor='#9B7FD4';b.style.background='rgba(155,127,212,.12)';b.style.color='#C5AAE0'}
+    };tc.appendChild(b)
+  });
+  // Build mode select
+  const ms=document.getElementById('fbMode');ms.innerHTML='<option value="">select a mode...</option>';
+  MODES.forEach(m=>{const o=document.createElement('option');o.value=m.id;o.textContent=m.name;ms.appendChild(o)});
+  // Build pay buttons
+  const pc=document.getElementById('fbPay');pc.innerHTML='';
+  fbPayOptions.forEach(p=>{
+    const b=document.createElement('button');b.textContent=p;
+    b.style.cssText=`flex:1;padding:8px 4px;border-radius:10px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:rgba(245,240,235,.5);font-size:11px;cursor:pointer;font-family:inherit;transition:all .2s`;
+    b.onclick=()=>{
+      fbSelectedPay=p;
+      pc.querySelectorAll('button').forEach(x=>{x.style.borderColor='rgba(255,255,255,.08)';x.style.background='rgba(255,255,255,.04)';x.style.color='rgba(245,240,235,.5)'});
+      b.style.borderColor='#9B7FD4';b.style.background='rgba(155,127,212,.12)';b.style.color='#C5AAE0'
+    };pc.appendChild(b)
   });
 }
 
-// ─── MODE SELECTION ─────────────────────────────────────────────────
-function openMode(i) {
-  const m = MODES[i];
-  if (m.pro) { showPaywall(m); } else { enterPlayer(m); }
-}
+function closeFeedback(){document.getElementById('feedbackModal').style.display='none'}
 
-function showPaywall(m) {
-  curMode = m;
-  document.getElementById('pwBlob1').style.background = m.ac;
-  document.getElementById('pwOrb').style.background = `radial-gradient(circle at 35% 35%, ${m.ac}88, ${m.ac})`;
-  document.getElementById('pwTitle').textContent = m.name;
-  document.getElementById('pwSub').textContent = m.sub;
-  document.getElementById('pwCta').style.background = `linear-gradient(135deg, ${m.ac}, ${m.ac}cc)`;
-  const feat = document.getElementById('pwFeatures');
-  feat.innerHTML = '';
-  [{icon:'✧',text:'Full sound library with premium layers'},
-   {icon:'◎',text:'Cycle-synced sound recommendations'},
-   {icon:'◐',text:'Binaural beats & pain relief frequencies'},
-   {icon:'◉',text:'Unlimited timer & background play'}].forEach(f => {
-    const row = document.createElement('div');
-    row.className = 'check';
-    row.innerHTML = `<div style="width:28px;height:28px;border-radius:50%;background:${m.ac}15;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">${f.icon}</div><div style="font-size:13px;color:rgba(245,240,235,.6)">${f.text}</div>`;
-    feat.appendChild(row);
-  });
-  showScreen('paywall');
-}
-
-function enterPlayerFromPw() { enterPlayer(curMode); }
-
-// ─── PLAYER ─────────────────────────────────────────────────────────
-function enterPlayer(m) {
-  curMode = m;
-  playing = false;
-  m.sounds.forEach(s => { if (!(s.k in vols)) vols[s.k] = s.dv; });
-
-  document.getElementById('plBlob1').style.background = m.ac;
-  document.getElementById('plBlob2').style.background = m.ac + '66';
-  document.getElementById('plOrb').style.background = `radial-gradient(circle at 35% 35%, ${m.ac}88, ${m.ac})`;
-  document.getElementById('plOrbRing').style.borderColor = m.ac + '33';
-  document.getElementById('plName').textContent = m.name;
-  document.getElementById('plTag').textContent = m.tag;
-  document.getElementById('plTag').style.background = m.ac + '18';
-  document.getElementById('plTag').style.color = m.ac;
-  document.getElementById('plPulse').style.background = m.ac;
-  document.documentElement.style.setProperty('--ac', m.ac);
-
-  // Sound rows
-  const container = document.getElementById('plSounds');
-  container.innerHTML = '';
-  m.sounds.forEach(s => {
-    const v = vols[s.k] || 0;
-    const row = document.createElement('div');
-    row.className = 'snd-row' + (v > 0 ? ' on' : '');
-    row.id = 'snd-' + s.k;
-    row.style.cssText = `--ac:${m.ac}`;
-    row.innerHTML = `
-      <div style="font-size:18px;width:28px;text-align:center">${s.e}</div>
-      <div style="flex:1">
-        <div style="font-size:12px;font-weight:500">${s.n}</div>
-        <input type="range" min="0" max="100" value="${Math.round(v*100)}"
-          oninput="onSlider('${s.k}',this.value,${MODES.indexOf(m)})"
-          style="accent-color:${m.ac}">
-      </div>
-      <div style="font-size:10px;color:rgba(245,240,235,.3);width:28px;text-align:right" id="vol-${s.k}">${v > 0 ? Math.round(v*100)+'%' : 'off'}</div>
-    `;
-    container.appendChild(row);
-  });
-
-  // Timer buttons
-  const tc = document.getElementById('plTimers');
-  tc.innerHTML = '';
-  TIMERS.forEach((t, i) => {
-    const btn = document.createElement('button');
-    btn.className = 'timer-btn' + (i === selTimer ? ' sel' : '');
-    btn.style.cssText = `--ac:${m.ac}`;
-    btn.textContent = t.l;
-    btn.onclick = () => selectTimer(i);
-    tc.appendChild(btn);
-  });
-
-  updatePlayUI();
-  showScreen('player');
-}
-
-function onSlider(k, val, mi) {
-  const v = parseInt(val) / 100;
-  vols[k] = v;
-  const row = document.getElementById('snd-' + k);
-  if (row) { if (v > 0) row.classList.add('on'); else row.classList.remove('on'); }
-  const lbl = document.getElementById('vol-' + k);
-  if (lbl) lbl.textContent = v > 0 ? Math.round(v * 100) + '%' : 'off';
-
-  if (playing && soundCache[k]) {
-    soundCache[k].audio.volume = v;
-    if (v > 0) soundCache[k].audio.play().catch(() => {});
-    else soundCache[k].audio.pause();
-  }
-}
-
-function selectTimer(i) {
-  selTimer = i;
-  const btns = document.getElementById('plTimers').children;
-  for (let b of btns) b.classList.remove('sel');
-  btns[i].classList.add('sel');
-  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; timeLeft = null; }
-  if (playing && TIMERS[selTimer].m > 0) startTimer();
-}
-
-// ─── PLAYBACK ───────────────────────────────────────────────────────
-async function togglePlay() {
-  if (playing) {
-    playing = false;
-    for (const s of curMode.sounds) {
-      if (soundCache[s.k]) soundCache[s.k].audio.pause();
-    }
-    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
-    updatePlayUI();
-    return;
-  }
-
-  // Starting
-  const hint = document.getElementById('plHint');
-  const needed = curMode.sounds.filter(s => vols[s.k] > 0 && !soundCache[s.k]);
-  if (needed.length > 0) {
-    hint.textContent = 'preparing sounds...';
-    await Promise.all(needed.map(s => renderSound(s.k)));
-  }
-
-  // Background-render remaining sounds in this mode for slider use later
-  const bg = curMode.sounds.filter(s => !soundCache[s.k]);
-  if (bg.length > 0) Promise.all(bg.map(s => renderSound(s.k))).catch(() => {});
-
-  playing = true;
-  for (const s of curMode.sounds) {
-    if (soundCache[s.k]) {
-      soundCache[s.k].audio.volume = vols[s.k] || 0;
-      if (vols[s.k] > 0) soundCache[s.k].audio.play().catch(() => {});
-    }
-  }
-
-  if (TIMERS[selTimer].m > 0) startTimer();
-  updatePlayUI();
-}
-
-function startTimer() {
-  if (timerInterval) clearInterval(timerInterval);
-  timeLeft = TIMERS[selTimer].m * 60;
-  timerInterval = setInterval(() => {
-    timeLeft--;
-    if (timeLeft <= 0) {
-      clearInterval(timerInterval); timerInterval = null; timeLeft = null;
-      stopAll(); return;
-    }
-    updatePlayUI();
-  }, 1000);
-}
-
-function stopAll() {
-  playing = false;
-  for (const key in soundCache) {
-    soundCache[key].audio.pause();
-    soundCache[key].audio.currentTime = 0;
-  }
-  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
-  timeLeft = null;
-  updatePlayUI();
-}
-
-function updatePlayUI() {
-  const btn = document.getElementById('playBtn');
-  const status = document.getElementById('plStatus');
-  const hint = document.getElementById('plHint');
-  const pulse = document.getElementById('plPulse');
-  const ring = document.getElementById('plOrbRing');
-  const orb = document.getElementById('plOrb');
-  if (!curMode) return;
-  const ac = curMode.ac;
-
-  if (playing) {
-    btn.style.background = `linear-gradient(135deg, ${ac}, ${ac}cc)`;
-    btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 20 20" fill="white"><rect x="4" y="3" width="4" height="14" rx="1"/><rect x="12" y="3" width="4" height="14" rx="1"/></svg>';
-    hint.textContent = 'playing \u00b7 tap to pause';
-    pulse.style.display = 'block';
-    ring.style.display = 'block';
-    ring.style.borderColor = ac + '33';
-    orb.style.boxShadow = `0 0 40px ${ac}55`;
-    if (timeLeft !== null) {
-      const m = Math.floor(timeLeft / 60), s = timeLeft % 60;
-      status.textContent = m + ':' + String(s).padStart(2, '0') + ' remaining';
-    } else {
-      status.textContent = 'playing';
-    }
-  } else {
-    btn.style.background = `linear-gradient(135deg, ${ac}, ${ac}cc)`;
-    btn.innerHTML = '<svg width="22" height="22" viewBox="0 0 22 22" fill="white"><polygon points="5,2 20,11 5,20"/></svg>';
-    hint.textContent = 'tap to play \u00b7 use headphones';
-    status.textContent = 'ready to play';
-    pulse.style.display = 'none';
-    ring.style.display = 'none';
-    orb.style.boxShadow = 'none';
-  }
-}
-
-// ─── FEEDBACK ───────────────────────────────────────────────────────
-function openFeedback() {
-  const modal = document.getElementById('feedbackModal');
-  modal.style.display = 'flex';
-
-  const tags = document.getElementById('fbTags');
-  if (!tags.children.length) {
-    ['ADHD','Autistic','Anxious','Student','Parent','Just curious'].forEach(t => {
-      const b = document.createElement('button');
-      b.textContent = t;
-      b.style.cssText = 'padding:6px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:rgba(245,240,235,.5);font-size:12px;cursor:pointer;font-family:inherit;transition:all .2s';
-      b.onclick = () => {
-        if (b.dataset.sel) { delete b.dataset.sel; b.style.borderColor='rgba(255,255,255,.08)'; b.style.background='rgba(255,255,255,.04)'; b.style.color='rgba(245,240,235,.5)'; }
-        else { b.dataset.sel='1'; b.style.borderColor='#9B7FD4'; b.style.background='rgba(155,127,212,.12)'; b.style.color='#9B7FD4'; }
-      };
-      tags.appendChild(b);
-    });
-  }
-
-  const sel = document.getElementById('fbMode');
-  if (sel.children.length <= 1) {
-    MODES.forEach(m => { const o = document.createElement('option'); o.value = m.id; o.textContent = m.icon + ' ' + m.name; sel.appendChild(o); });
-  }
-
-  const pay = document.getElementById('fbPay');
-  if (!pay.children.length) {
-    ['Yes, definitely','Maybe','Probably not','No'].forEach(o => {
-      const b = document.createElement('button');
-      b.textContent = o;
-      b.style.cssText = 'flex:1;padding:8px 4px;border-radius:8px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:rgba(245,240,235,.5);font-size:11px;cursor:pointer;font-family:inherit;transition:all .2s';
-      b.onclick = () => {
-        Array.from(pay.children).forEach(x => { x.style.borderColor='rgba(255,255,255,.08)'; x.style.background='rgba(255,255,255,.04)'; x.style.color='rgba(245,240,235,.5)'; });
-        b.style.borderColor='#9B7FD4'; b.style.background='rgba(155,127,212,.12)'; b.style.color='#9B7FD4';
-      };
-      pay.appendChild(b);
-    });
-  }
-}
-
-function closeFeedback() { document.getElementById('feedbackModal').style.display = 'none'; }
-
-function submitFeedback() {
-  const tags = Array.from(document.getElementById('fbTags').children).filter(b => b.dataset.sel).map(b => b.textContent);
-  const mode = document.getElementById('fbMode').value;
-  const text = document.getElementById('fbText').value;
-  const payBtns = Array.from(document.getElementById('fbPay').children);
-  const pay = payBtns.find(b => b.style.color === 'rgb(155, 127, 212)');
-  console.log('Feedback:', JSON.stringify({ tags, mode, text, pay: pay ? pay.textContent : '', ts: new Date().toISOString() }));
-
-  document.getElementById('feedbackModal').querySelector('div').innerHTML = `
+function submitFeedback(){
+  const data={
+    tags:fbSelectedTags,
+    favoriteMode:document.getElementById('fbMode').value,
+    feedback:document.getElementById('fbText').value,
+    wouldPay:fbSelectedPay,
+    timestamp:new Date().toISOString()
+  };
+  // Store feedback locally and show confirmation
+  const existing=JSON.parse(localStorage.getItem('hush_feedback')||'[]');
+  existing.push(data);localStorage.setItem('hush_feedback',JSON.stringify(existing));
+  document.getElementById('feedbackModal').querySelector('div').innerHTML=`
     <div style="text-align:center;padding:40px 0">
       <div style="font-size:40px;margin-bottom:16px">✧</div>
-      <h3 style="font-size:20px;font-weight:400;margin-bottom:6px">thank you</h3>
-      <p style="font-size:13px;color:rgba(245,240,235,.4);font-style:italic">your feedback helps shape Hush</p>
-      <button onclick="closeFeedback()" style="margin-top:24px;padding:10px 28px;border-radius:10px;border:none;background:linear-gradient(135deg,#9B7FD4,#7B5FB4);color:#fff;font-size:13px;cursor:pointer;font-family:inherit">close</button>
-    </div>
-  `;
+      <h3 style="font-size:20px;font-weight:400;margin-bottom:8px">thank you</h3>
+      <p style="font-size:13px;color:rgba(245,240,235,.4);font-style:italic">your feedback means the world to us</p>
+      <button onclick="closeFeedback()" style="margin-top:24px;padding:10px 28px;border-radius:10px;border:none;background:rgba(155,127,212,.15);color:#C5AAE0;font-size:13px;cursor:pointer;font-family:inherit">close</button>
+    </div>`;
 }
 
-// ─── INIT ───────────────────────────────────────────────────────────
+// ═══ INIT ═══
 buildHome();
+
+async function enterFromSplash(){
+  // Play silent audio to activate iOS "playback" session (works in silent mode)
+  try{const s=new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=');s.play().catch(()=>{})}catch(e){}
+  try{await Tone.start();audioStarted=true}catch(e){}
+  if(Tone.context.state==='suspended')try{await Tone.context.resume()}catch(e){}
+  showScreen('home')
+}
+
+// Aggressive mobile audio unlock — keep trying on every touch until it works
+['touchstart','touchend','click'].forEach(evt=>{
+  document.addEventListener(evt,async function(){
+    if(!audioStarted){try{await Tone.start();audioStarted=true}catch(e){}}
+    if(Tone.context&&Tone.context.state==='suspended'){try{await Tone.context.resume()}catch(e){}}
+  },{passive:true})
+});
 </script>
 </body>
 </html>
