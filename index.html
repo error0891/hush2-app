@@ -178,8 +178,35 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
   </div>
 </div>
 
+<script>
+// ═══ iOS AUDIO BOOTSTRAP ═══
+// Create and unlock a raw AudioContext BEFORE Tone.js loads.
+// iOS requires: 1) context created from user gesture, 2) resume called synchronously,
+// 3) a buffer played to fully unlock. We store it globally for Tone.js to use.
+window._audioCtx=null;
+window._audioUnlocked=false;
+function _createAndUnlock(){
+  if(window._audioUnlocked)return;
+  if(!window._audioCtx){
+    const AC=window.AudioContext||window.webkitAudioContext;
+    window._audioCtx=new AC();
+  }
+  const ctx=window._audioCtx;
+  if(ctx.state==='suspended')ctx.resume();
+  // Play a silent buffer — iOS requires actual audio output to fully unlock
+  try{
+    const buf=ctx.createBuffer(1,1,ctx.sampleRate);
+    const src=ctx.createBufferSource();
+    src.buffer=buf;src.connect(ctx.destination);src.start(0);
+  }catch(e){}
+  if(ctx.state==='running')window._audioUnlocked=true;
+}
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
 <script>
+// ═══ PASS OUR UNLOCKED CONTEXT TO TONE.JS ═══
+if(window._audioCtx){Tone.setContext(window._audioCtx)}
+
 // ═══ MODES — expanded with new sounds & 3 new modes ═══
 const MODES=[
   {id:"focus",name:"Focus",sub:"Quiet the noise",icon:"◎",grad:"linear-gradient(135deg,#E8DFF5,#C4B0F4)",ac:"#9B7FD4",tag:"ADHD-optimized",
@@ -205,25 +232,22 @@ let curMode=null,playing=false,selTimer=5,timeLeft=null,timerInterval=null,audio
 const nodes={},vols={};
 
 // ═══ AUDIO ENGINE ═══
-// iOS Safari requires AudioContext resume in a *synchronous* user gesture handler.
-// Tone.start() internally calls resume(), but we also force it manually.
-let _iosUnlocked=false;
-function unlockiOS(){
-  // Must be called synchronously from a touch/click handler
-  if(_iosUnlocked&&audioStarted&&Tone.context.state==='running')return;
-  const ctx=Tone.context.rawContext||Tone.context._context||Tone.context;
-  if(ctx.state==='suspended')ctx.resume();
-  // Play a silent buffer on the raw context to fully unlock iOS audio
-  try{
-    const buf=ctx.createBuffer(1,1,ctx.sampleRate||44100);
-    const src=ctx.createBufferSource();src.buffer=buf;
-    src.connect(ctx.destination);src.start(0);src.onended=()=>{src.disconnect();_iosUnlocked=true};
-  }catch(e){}
+function unlockAudio(){
+  // Synchronous — call as first thing in every touch/click handler
+  _createAndUnlock();
+  // Keep Tone.js context in sync
+  if(window._audioCtx&&Tone.context.rawContext!==window._audioCtx){
+    try{Tone.setContext(window._audioCtx)}catch(e){}
+  }
+  const raw=Tone.context.rawContext||Tone.context;
+  if(raw.state==='suspended')raw.resume();
 }
 async function initAudio(){
-  unlockiOS();
-  if(!audioStarted){try{await Tone.start();audioStarted=true}catch(e){}}
-  if(Tone.context.state==='suspended'){try{await Tone.context.resume()}catch(e){}}
+  unlockAudio();
+  try{await Tone.start();audioStarted=true}catch(e){}
+  // Final fallback: directly resume
+  const raw=Tone.context.rawContext||Tone.context;
+  if(raw.state==='suspended')await raw.resume();
 }
 
 function ensureNode(k){
@@ -322,7 +346,14 @@ function ensureNode(k){
   nodes[k]={g}
 }
 
-function setVol(k,v){vols[k]=v;if(nodes[k])nodes[k].g.gain.rampTo(v,.5)}
+function setVol(k,v){
+  vols[k]=v;
+  if(!nodes[k])return;
+  try{nodes[k].g.gain.rampTo(v,.5)}catch(e){
+    // rampTo can fail on iOS — set directly as fallback
+    try{nodes[k].g.gain.value=v}catch(e2){}
+  }
+}
 function startTransport(){if(Tone.getTransport().state!=="started")Tone.getTransport().start()}
 function stopAll(){
   Object.keys(nodes).forEach(k=>nodes[k].g.gain.rampTo(0,.3));
@@ -431,8 +462,8 @@ function onSlider(k,val,mi){
 }
 
 async function togglePlay(){
-  // CRITICAL: call unlockiOS synchronously first — before any await
-  unlockiOS();
+  // CRITICAL: synchronous unlock first — before any await
+  unlockAudio();
   await initAudio();
   if(!playing){
     curMode.sounds.forEach(s=>{ensureNode(s.k);setVol(s.k,vols[s.k]||0)});
@@ -473,7 +504,9 @@ function updatePlayUI(){
   btn.style.boxShadow=playing?`0 0 36px ${m.ac}45`:`0 4px 14px ${m.ac}28`;
   btn.innerHTML=playing?'<div style="display:flex;gap:4px"><div style="width:3.5px;height:18px;background:#fff;border-radius:2px"></div><div style="width:3.5px;height:18px;background:#fff;border-radius:2px"></div></div>'
     :'<div style="width:0;height:0;border-left:12px solid #fff;border-top:9px solid transparent;border-bottom:9px solid transparent;margin-left:2px"></div>';
-  document.getElementById('plHint').textContent=playing?'playing · tap to pause':'tap to play · use headphones for best experience';
+  const raw=Tone.context.rawContext||Tone.context;
+  const dbg=raw.state||'?';
+  document.getElementById('plHint').textContent=playing?`playing · tap to pause · ctx:${dbg}`:'tap to play · use headphones for best experience';
 }
 
 // ═══ FEEDBACK SYSTEM ═══
@@ -536,16 +569,16 @@ function submitFeedback(){
 buildHome();
 
 async function enterFromSplash(){
-  unlockiOS(); // synchronous — must be first
+  unlockAudio(); // synchronous — must be first
   try{await Tone.start();audioStarted=true}catch(e){}
   if(Tone.context.state==='suspended')try{await Tone.context.resume()}catch(e){}
   showScreen('home')
 }
 
-// Aggressive mobile audio unlock — synchronous unlockiOS on every touch
+// Unlock audio on every user gesture
 ['touchstart','touchend','click'].forEach(evt=>{
   document.addEventListener(evt,function(){
-    unlockiOS();
+    unlockAudio();
     if(!audioStarted){Tone.start().then(()=>{audioStarted=true}).catch(()=>{})}
   },{passive:true})
 });
