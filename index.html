@@ -205,14 +205,25 @@ let curMode=null,playing=false,selTimer=5,timeLeft=null,timerInterval=null,audio
 const nodes={},vols={};
 
 // ═══ AUDIO ENGINE ═══
-// Mobile-safe: always try to unlock on any user gesture
+// iOS Safari requires AudioContext resume in a *synchronous* user gesture handler.
+// Tone.start() internally calls resume(), but we also force it manually.
+let _iosUnlocked=false;
+function unlockiOS(){
+  // Must be called synchronously from a touch/click handler
+  if(_iosUnlocked&&audioStarted&&Tone.context.state==='running')return;
+  const ctx=Tone.context.rawContext||Tone.context._context||Tone.context;
+  if(ctx.state==='suspended')ctx.resume();
+  // Play a silent buffer on the raw context to fully unlock iOS audio
+  try{
+    const buf=ctx.createBuffer(1,1,ctx.sampleRate||44100);
+    const src=ctx.createBufferSource();src.buffer=buf;
+    src.connect(ctx.destination);src.start(0);src.onended=()=>{src.disconnect();_iosUnlocked=true};
+  }catch(e){}
+}
 async function initAudio(){
-  try{await Tone.start();audioStarted=true}catch(e){console.warn('Tone.start failed',e)}
-  if(Tone.context.state==='suspended'){try{await Tone.context.resume()}catch(e){console.warn('resume failed',e)}}
-  // iOS workaround: play a silent buffer to fully unlock
-  if(!window._silentPlayed){
-    try{const b=Tone.context.createBuffer(1,1,22050);const s=Tone.context.createBufferSource();s.buffer=b;s.connect(Tone.context.rawContext.destination);s.start(0);window._silentPlayed=true}catch(e){}
-  }
+  unlockiOS();
+  if(!audioStarted){try{await Tone.start();audioStarted=true}catch(e){}}
+  if(Tone.context.state==='suspended'){try{await Tone.context.resume()}catch(e){}}
 }
 
 function ensureNode(k){
@@ -420,13 +431,10 @@ function onSlider(k,val,mi){
 }
 
 async function togglePlay(){
-  // Always try to unlock audio on every tap (mobile requires user gesture)
+  // CRITICAL: call unlockiOS synchronously first — before any await
+  unlockiOS();
   await initAudio();
   if(!playing){
-    // Double-check context is running
-    if(Tone.context.state!=='running'){try{await Tone.context.resume()}catch(e){}}
-    // Small delay for iOS to fully unlock
-    await new Promise(r=>setTimeout(r,100));
     curMode.sounds.forEach(s=>{ensureNode(s.k);setVol(s.k,vols[s.k]||0)});
     startTransport();playing=true;
     if(TIMERS[selTimer].m>0){timeLeft=TIMERS[selTimer].m*60;startTimer()}
@@ -528,16 +536,17 @@ function submitFeedback(){
 buildHome();
 
 async function enterFromSplash(){
+  unlockiOS(); // synchronous — must be first
   try{await Tone.start();audioStarted=true}catch(e){}
   if(Tone.context.state==='suspended')try{await Tone.context.resume()}catch(e){}
   showScreen('home')
 }
 
-// Aggressive mobile audio unlock — keep trying on every touch until it works
+// Aggressive mobile audio unlock — synchronous unlockiOS on every touch
 ['touchstart','touchend','click'].forEach(evt=>{
-  document.addEventListener(evt,async function(){
-    if(!audioStarted){try{await Tone.start();audioStarted=true}catch(e){}}
-    if(Tone.context&&Tone.context.state==='suspended'){try{await Tone.context.resume()}catch(e){}}
+  document.addEventListener(evt,function(){
+    unlockiOS();
+    if(!audioStarted){Tone.start().then(()=>{audioStarted=true}).catch(()=>{})}
   },{passive:true})
 });
 </script>
