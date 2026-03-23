@@ -282,7 +282,7 @@ async function renderSound(key) {
   let dur, numCh = 1;
   if (key === 'bowl' || key === 'lofi') dur = 16;
   else if (key === 'heartbeat') dur = 2;
-  else dur = 6;
+  else dur = 10;
   if (key === 'binaural') numCh = 2;
 
   const ctx = new OfflineAudioContext(numCh, sr * dur, sr);
@@ -427,6 +427,18 @@ async function renderSound(key) {
   }
 
   const rendered = await ctx.startRendering();
+  // Crossfade the loop point: blend last 0.5s with first 0.5s for seamless looping
+  const fadeLen = Math.min(Math.floor(sr * 0.5), rendered.length / 4);
+  for (let ch = 0; ch < rendered.numberOfChannels; ch++) {
+    const d = rendered.getChannelData(ch);
+    for (let i = 0; i < fadeLen; i++) {
+      const t = i / fadeLen; // 0→1
+      // Fade out end
+      d[d.length - fadeLen + i] *= (1 - t);
+      // Mix end into beginning (crossfade)
+      d[i] = d[i] * t + d[d.length - fadeLen + i] * (1 - t);
+    }
+  }
   const wavBlob = bufToWav(rendered);
   const blobUrl = URL.createObjectURL(wavBlob);
   const audio = new Audio(blobUrl);
