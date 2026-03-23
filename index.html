@@ -231,116 +231,176 @@ const TIMERS=[{l:"5m",m:5},{l:"15m",m:15},{l:"25m",m:25},{l:"45m",m:45},{l:"1hr"
 let curMode=null,playing=false,selTimer=5,timeLeft=null,timerInterval=null,audioStarted=false;
 const nodes={},vols={};
 
-// ═══ AUDIO ENGINE ═══
-function unlockAudio(){
-  // Synchronous — call as first thing in every touch/click handler
-  _createAndUnlock();
-  // Keep Tone.js context in sync
-  if(window._audioCtx&&Tone.context.rawContext!==window._audioCtx){
-    try{Tone.setContext(window._audioCtx)}catch(e){}
-  }
-  const raw=Tone.context.rawContext||Tone.context;
-  if(raw.state==='suspended')raw.resume();
+// ═══ AUDIO ENGINE — Raw Web Audio API (iOS-safe) ═══
+// Tone.js Noise/Oscillator fails silently on iOS. We use raw Web Audio for all
+// sound sources and only keep Tone.js for Transport scheduling (lofi, heartbeat, bowl).
+
+function getCtx(){
+  if(window._audioCtx)return window._audioCtx;
+  const AC=window.AudioContext||window.webkitAudioContext;
+  window._audioCtx=new AC();
+  return window._audioCtx;
 }
+
+function unlockAudio(){
+  _createAndUnlock();
+  const ctx=getCtx();
+  if(ctx.state==='suspended')ctx.resume();
+}
+
 async function initAudio(){
   unlockAudio();
+  const ctx=getCtx();
+  // Tell Tone.js to use our context
+  try{Tone.setContext(ctx)}catch(e){}
   try{await Tone.start();audioStarted=true}catch(e){}
-  // Final fallback: directly resume
-  const raw=Tone.context.rawContext||Tone.context;
-  if(raw.state==='suspended')await raw.resume();
+  if(ctx.state==='suspended')await ctx.resume();
+}
+
+// Generate a looping noise buffer using raw Web Audio
+function makeNoiseBuf(ctx,type,seconds){
+  const sr=ctx.sampleRate;const len=sr*seconds;
+  const buf=ctx.createBuffer(2,len,sr);
+  for(let ch=0;ch<2;ch++){
+    const d=buf.getChannelData(ch);
+    if(type==='white'){for(let i=0;i<len;i++)d[i]=Math.random()*2-1}
+    else if(type==='pink'){
+      let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
+      for(let i=0;i<len;i++){
+        const w=Math.random()*2-1;
+        b0=0.99886*b0+w*0.0555179;b1=0.99332*b1+w*0.0750759;
+        b2=0.96900*b2+w*0.1538520;b3=0.86650*b3+w*0.3104856;
+        b4=0.55000*b4+w*0.5329522;b5=-0.7616*b5-w*0.0168980;
+        d[i]=(b0+b1+b2+b3+b4+b5+b6+w*0.5362)*0.11;b6=w*0.115926;
+      }
+    }
+    else if(type==='brown'){
+      let last=0;
+      for(let i=0;i<len;i++){last+=(Math.random()*2-1)*0.02;if(last>1)last=1;if(last<-1)last=-1;d[i]=last*3.5}
+    }
+  }
+  return buf;
+}
+
+function makeNoiseSource(ctx,type){
+  const buf=makeNoiseBuf(ctx,type,4);
+  const src=ctx.createBufferSource();
+  src.buffer=buf;src.loop=true;src.start(0);
+  return src;
 }
 
 function ensureNode(k){
   if(nodes[k])return;
-  const g=new Tone.Gain(0).toDestination();
+  const ctx=getCtx();
+  // Master gain for this sound — volume control
+  const g=ctx.createGain();g.gain.value=0;g.connect(ctx.destination);
 
   if(k==="brown"){
-    const s=new Tone.Noise("brown");const f=new Tone.Filter(800,"lowpass");s.connect(f);f.connect(g);s.start()
+    const s=makeNoiseSource(ctx,'brown');
+    const f=ctx.createBiquadFilter();f.type='lowpass';f.frequency.value=800;
+    s.connect(f);f.connect(g);
   }
   else if(k==="pink"){
-    const s=new Tone.Noise("pink");s.connect(g);s.start()
+    const s=makeNoiseSource(ctx,'pink');s.connect(g);
   }
   else if(k==="white"){
-    const s=new Tone.Noise("white");const f=new Tone.Filter(2000,"lowpass");s.connect(f);f.connect(g);s.start()
+    const s=makeNoiseSource(ctx,'white');
+    const f=ctx.createBiquadFilter();f.type='lowpass';f.frequency.value=2000;
+    s.connect(f);f.connect(g);
   }
   else if(k==="binaural"){
-    const l=new Tone.Oscillator(200,"sine"),r=new Tone.Oscillator(240,"sine"),pl=new Tone.Panner(-1),pr=new Tone.Panner(1);
-    l.connect(pl);pl.connect(g);r.connect(pr);pr.connect(g);l.start();r.start()
+    const l=ctx.createOscillator();l.type='sine';l.frequency.value=200;
+    const r=ctx.createOscillator();r.type='sine';r.frequency.value=240;
+    const panL=ctx.createStereoPanner();panL.pan.value=-1;
+    const panR=ctx.createStereoPanner();panR.pan.value=1;
+    l.connect(panL);panL.connect(g);r.connect(panR);panR.connect(g);
+    l.start();r.start();
   }
   else if(k==="drone"){
-    const s=new Tone.Synth({oscillator:{type:"sine"},envelope:{attack:2,decay:0,sustain:1,release:4}});
-    const rv=new Tone.Reverb({decay:8,wet:.7});s.connect(rv);rv.connect(g);s.triggerAttack("C2")
+    const osc=ctx.createOscillator();osc.type='sine';osc.frequency.value=65.41; // C2
+    const conv=ctx.createConvolver();
+    // Simple reverb impulse
+    const rl=ctx.sampleRate*3;const imp=ctx.createBuffer(2,rl,ctx.sampleRate);
+    for(let c=0;c<2;c++){const d=imp.getChannelData(c);for(let i=0;i<rl;i++)d[i]=(Math.random()*2-1)*Math.exp(-i/(ctx.sampleRate*1.2))}
+    conv.buffer=imp;
+    const wet=ctx.createGain();wet.gain.value=0.6;
+    const dry=ctx.createGain();dry.gain.value=0.4;
+    osc.connect(conv);conv.connect(wet);wet.connect(g);
+    osc.connect(dry);dry.connect(g);osc.start();
   }
   else if(k==="lofi"){
-    const rv=new Tone.Reverb({decay:3,wet:.5}),fl=new Tone.Filter(1200,"lowpass");rv.connect(fl);fl.connect(g);
+    // Keep Tone.js for PolySynth scheduling
+    const tg=new Tone.Gain(1).connect(g);
+    const rv=new Tone.Reverb({decay:3,wet:.5});const fl=new Tone.Filter(1200,"lowpass");
+    rv.connect(fl);fl.connect(tg);
     const sy=new Tone.PolySynth(Tone.Synth,{maxPolyphony:8,options:{oscillator:{type:"triangle"},envelope:{attack:.3,decay:.8,sustain:.4,release:1.5},volume:-12}});sy.connect(rv);
     const ch=[["D4","F4","A4","C5"],["G3","B3","D4","F4"],["C4","E4","G4","B4"],["A3","C4","E4","G4"]];
     let i=0;const lp=new Tone.Loop(t=>{sy.triggerAttackRelease(ch[i%4],"2n",t);i++},"1m");
-    Tone.getTransport().bpm.value=75;lp.start(0)
+    Tone.getTransport().bpm.value=75;lp.start(0);
   }
   else if(k==="vinyl"){
-    const s=new Tone.Noise("white");const f=new Tone.Filter({frequency:800,type:"bandpass",Q:.5});s.connect(f);f.connect(g);s.start()
+    const s=makeNoiseSource(ctx,'white');
+    const f=ctx.createBiquadFilter();f.type='bandpass';f.frequency.value=800;f.Q.value=0.5;
+    s.connect(f);f.connect(g);
   }
-  // ── NEW SOUNDS ──
   else if(k==="rain"){
-    // Rain: pink noise through bandpass + LFO for patter variation
-    const s=new Tone.Noise("pink");
-    const bp=new Tone.Filter({frequency:3000,type:"bandpass",Q:0.3});
-    const lp2=new Tone.Filter(5000,"lowpass");
-    const lfo=new Tone.LFO({frequency:.15,min:1800,max:4500}).start();
-    lfo.connect(bp.frequency);
-    s.connect(bp);bp.connect(lp2);lp2.connect(g);s.start()
+    const s=makeNoiseSource(ctx,'pink');
+    const f=ctx.createBiquadFilter();f.type='bandpass';f.frequency.value=3000;f.Q.value=0.3;
+    const lp2=ctx.createBiquadFilter();lp2.type='lowpass';lp2.frequency.value=5000;
+    // LFO on filter freq for rain variation
+    const lfo=ctx.createOscillator();lfo.type='sine';lfo.frequency.value=0.15;
+    const lfoG=ctx.createGain();lfoG.gain.value=1200;
+    lfo.connect(lfoG);lfoG.connect(f.frequency);lfo.start();
+    s.connect(f);f.connect(lp2);lp2.connect(g);
   }
   else if(k==="wind"){
-    // Wind: brown noise with slow LFO on filter for gusts
-    const s=new Tone.Noise("brown");
-    const bp=new Tone.Filter({frequency:600,type:"bandpass",Q:0.8});
-    const lfo=new Tone.LFO({frequency:.08,min:300,max:1200}).start();
-    lfo.connect(bp.frequency);
-    s.connect(bp);bp.connect(g);s.start()
+    const s=makeNoiseSource(ctx,'brown');
+    const f=ctx.createBiquadFilter();f.type='bandpass';f.frequency.value=600;f.Q.value=0.8;
+    const lfo=ctx.createOscillator();lfo.type='sine';lfo.frequency.value=0.08;
+    const lfoG=ctx.createGain();lfoG.gain.value=400;
+    lfo.connect(lfoG);lfoG.connect(f.frequency);lfo.start();
+    s.connect(f);f.connect(g);
   }
   else if(k==="heartbeat"){
-    // Heartbeat: sub-bass kick at ~60bpm
+    // Use Tone.js for scheduled membrane synth
+    const tg=new Tone.Gain(1).connect(g);
     const sy=new Tone.MembraneSynth({pitchDecay:.08,octaves:4,envelope:{attack:.01,decay:.3,sustain:0,release:.4},volume:-8});
-    const lp2=new Tone.Filter(120,"lowpass");sy.connect(lp2);lp2.connect(g);
+    const fl=new Tone.Filter(120,"lowpass");sy.connect(fl);fl.connect(tg);
     const lp3=new Tone.Loop(t=>{sy.triggerAttackRelease("C1","8n",t);sy.triggerAttackRelease("C1","8n",t+0.25)},"2n");
-    Tone.getTransport().bpm.value=75;lp3.start(0)
+    Tone.getTransport().bpm.value=75;lp3.start(0);
   }
   else if(k==="crackling"){
-    // Fireplace crackling: filtered white noise bursts
-    const s=new Tone.Noise("white");
-    const bp=new Tone.Filter({frequency:2500,type:"bandpass",Q:2});
-    const ag=new Tone.Gain(0);
-    const lfo=new Tone.LFO({frequency:6,min:0,max:.8,type:"square"}).start();
-    // Random modulation for crackle effect
-    const lfo2=new Tone.LFO({frequency:.5,min:3,max:12}).start();
-    lfo2.connect(lfo.frequency);
-    lfo.connect(ag.gain);
-    s.connect(bp);bp.connect(ag);ag.connect(g);s.start()
+    const s=makeNoiseSource(ctx,'white');
+    const f=ctx.createBiquadFilter();f.type='bandpass';f.frequency.value=2500;f.Q.value=2;
+    const ag=ctx.createGain();ag.gain.value=0;
+    // Modulate gain for crackle bursts
+    const lfo=ctx.createOscillator();lfo.type='square';lfo.frequency.value=6;
+    const lfoG=ctx.createGain();lfoG.gain.value=0.8;
+    const lfo2=ctx.createOscillator();lfo2.type='sine';lfo2.frequency.value=0.5;
+    const lfo2G=ctx.createGain();lfo2G.gain.value=5;
+    lfo2.connect(lfo2G);lfo2G.connect(lfo.frequency);
+    lfo.connect(lfoG);lfoG.connect(ag.gain);
+    lfo.start();lfo2.start();
+    s.connect(f);f.connect(ag);ag.connect(g);
   }
   else if(k==="bowl"){
-    // Singing bowl: sine with slow attack and long reverb
-    const rv=new Tone.Reverb({decay:12,wet:.8});rv.connect(g);
+    // Use Tone.js for synth scheduling
+    const tg=new Tone.Gain(1).connect(g);
+    const rv=new Tone.Reverb({decay:12,wet:.8});rv.connect(tg);
     const sy=new Tone.Synth({oscillator:{type:"sine"},envelope:{attack:2,decay:4,sustain:.3,release:6},volume:-10});
     sy.connect(rv);
-    // Ring every ~8 seconds with slight pitch variation
     const notes=["G4","B4","D5","G5"];let ni=0;
-    const lp2=new Tone.Loop(t=>{sy.triggerAttackRelease(notes[ni%4],"4n",t);ni++},"8n");
-    // Slow loop: one strike every 8 seconds
     const lp3=new Tone.Loop(t=>{sy.triggerAttackRelease(notes[ni%4],3,t);ni++},8);
-    lp3.start(0)
+    lp3.start(0);
   }
   else if(k==="cafe"){
-    // Cafe: layered filtered noises for ambient chatter + clinks
-    const s1=new Tone.Noise("pink");
-    const bp1=new Tone.Filter({frequency:1200,type:"bandpass",Q:.4});
-    const s2=new Tone.Noise("white");
-    const bp2=new Tone.Filter({frequency:3000,type:"bandpass",Q:1.5});
-    const g2=new Tone.Gain(.15);
-    const lfo=new Tone.LFO({frequency:.2,min:.05,max:.25}).start();
-    lfo.connect(g2.gain);
-    s1.connect(bp1);bp1.connect(g);s1.start();
-    s2.connect(bp2);bp2.connect(g2);g2.connect(g);s2.start()
+    const s1=makeNoiseSource(ctx,'pink');
+    const f1=ctx.createBiquadFilter();f1.type='bandpass';f1.frequency.value=1200;f1.Q.value=0.4;
+    const s2=makeNoiseSource(ctx,'white');
+    const f2=ctx.createBiquadFilter();f2.type='bandpass';f2.frequency.value=3000;f2.Q.value=1.5;
+    const g2=ctx.createGain();g2.gain.value=0.15;
+    s1.connect(f1);f1.connect(g);
+    s2.connect(f2);f2.connect(g2);g2.connect(g);
   }
 
   nodes[k]={g}
@@ -349,15 +409,29 @@ function ensureNode(k){
 function setVol(k,v){
   vols[k]=v;
   if(!nodes[k])return;
-  try{nodes[k].g.gain.rampTo(v,.5)}catch(e){
-    // rampTo can fail on iOS — set directly as fallback
-    try{nodes[k].g.gain.value=v}catch(e2){}
+  const g=nodes[k].g;
+  // Use raw Web Audio param scheduling (more reliable on iOS than Tone.js rampTo)
+  try{
+    const now=getCtx().currentTime;
+    g.gain.cancelScheduledValues(now);
+    g.gain.setValueAtTime(g.gain.value,now);
+    g.gain.linearRampToValueAtTime(v,now+0.5);
+  }catch(e){
+    try{g.gain.value=v}catch(e2){}
   }
 }
 function startTransport(){if(Tone.getTransport().state!=="started")Tone.getTransport().start()}
 function stopAll(){
-  Object.keys(nodes).forEach(k=>nodes[k].g.gain.rampTo(0,.3));
-  setTimeout(()=>Tone.getTransport().stop(),400);
+  const now=getCtx().currentTime;
+  Object.keys(nodes).forEach(k=>{
+    try{
+      const g=nodes[k].g;
+      g.gain.cancelScheduledValues(now);
+      g.gain.setValueAtTime(g.gain.value,now);
+      g.gain.linearRampToValueAtTime(0,now+0.3);
+    }catch(e){}
+  });
+  setTimeout(()=>{try{Tone.getTransport().stop()}catch(e){}},400);
   playing=false;clearInterval(timerInterval);timeLeft=null;updatePlayUI()
 }
 
