@@ -274,45 +274,65 @@ function genBrown(length) {
   return data;
 }
 
+// ─── HELPERS ────────────────────────────────────────────────────────
+function makeImpulse(ctx, decay, sr, len) {
+  // Generate convolver reverb impulse response
+  const imp = ctx.createBuffer(2, len, sr);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = imp.getChannelData(ch);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (sr * decay));
+  }
+  return imp;
+}
+function noiseBuf(ctx, gen, sr, dur) {
+  // Create stereo noise buffer with slight L/R variation for width
+  const ab = ctx.createBuffer(2, sr * dur, sr);
+  ab.getChannelData(0).set(gen(sr * dur));
+  ab.getChannelData(1).set(gen(sr * dur)); // different random seed = natural stereo
+  return ab;
+}
+
 // ─── OFFLINE RENDER ─────────────────────────────────────────────────
 async function renderSound(key) {
   if (soundCache[key]) return soundCache[key];
 
   const sr = 44100;
-  let dur, numCh = 1;
-  if (key === 'bowl' || key === 'lofi') dur = 16;
-  else if (key === 'heartbeat') dur = 2;
-  else dur = 10;
-  if (key === 'binaural') numCh = 2;
+  let dur;
+  if (key === 'bowl') dur = 32;
+  else if (key === 'lofi') dur = 32;
+  else if (key === 'heartbeat') dur = 4;
+  else dur = 12;
 
-  const ctx = new OfflineAudioContext(numCh, sr * dur, sr);
+  // All sounds render in stereo for richness
+  const ctx = new OfflineAudioContext(2, sr * dur, sr);
 
   switch (key) {
     case 'brown': {
-      const ab = ctx.createBuffer(1, sr * dur, sr);
-      ab.getChannelData(0).set(genBrown(sr * dur));
+      const ab = noiseBuf(ctx, genBrown, sr, dur);
       const src = ctx.createBufferSource(); src.buffer = ab;
       const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 800;
-      src.connect(lp); lp.connect(ctx.destination); src.start(0);
+      // Gentle shelf boost for warmth
+      const ls = ctx.createBiquadFilter(); ls.type = 'lowshelf'; ls.frequency.value = 200; ls.gain.value = 4;
+      src.connect(lp); lp.connect(ls); ls.connect(ctx.destination); src.start(0);
       break;
     }
     case 'pink': {
-      const ab = ctx.createBuffer(1, sr * dur, sr);
-      ab.getChannelData(0).set(genPink(sr * dur));
+      const ab = noiseBuf(ctx, genPink, sr, dur);
       const src = ctx.createBufferSource(); src.buffer = ab;
-      src.connect(ctx.destination); src.start(0);
+      // Slight warmth
+      const ls = ctx.createBiquadFilter(); ls.type = 'lowshelf'; ls.frequency.value = 300; ls.gain.value = 2;
+      src.connect(ls); ls.connect(ctx.destination); src.start(0);
       break;
     }
     case 'white': {
-      const ab = ctx.createBuffer(1, sr * dur, sr);
-      const d = ab.getChannelData(0);
-      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      const ab = noiseBuf(ctx, n => { const d = new Float32Array(n); for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1; return d; }, sr, dur);
       const src = ctx.createBufferSource(); src.buffer = ab;
       const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2000;
       src.connect(lp); lp.connect(ctx.destination); src.start(0);
       break;
     }
     case 'binaural': {
+      // True stereo: left ear 200Hz, right ear 240Hz → 40Hz binaural beat
       const merger = ctx.createChannelMerger(2);
       const oscL = ctx.createOscillator(); oscL.type = 'sine'; oscL.frequency.value = 200;
       const gL = ctx.createGain(); gL.gain.value = 0.5;
@@ -325,110 +345,230 @@ async function renderSound(key) {
       break;
     }
     case 'drone': {
-      const osc = ctx.createOscillator(); osc.type = 'sine'; osc.frequency.value = 65.41;
-      const g = ctx.createGain(); g.gain.value = 0.7;
-      osc.connect(g); g.connect(ctx.destination); osc.start(0);
+      // Rich drone: fundamental + 5th + sub with reverb
+      const conv = ctx.createConvolver();
+      conv.buffer = makeImpulse(ctx, 3.0, sr, sr * 4);
+      const wet = ctx.createGain(); wet.gain.value = 0.6;
+      const dry = ctx.createGain(); dry.gain.value = 0.4;
+      conv.connect(wet); wet.connect(ctx.destination);
+
+      // C2 fundamental
+      const o1 = ctx.createOscillator(); o1.type = 'sine'; o1.frequency.value = 65.41;
+      const g1 = ctx.createGain(); g1.gain.value = 0.5;
+      o1.connect(g1); g1.connect(conv); g1.connect(dry); o1.start(0);
+      // G2 fifth (subtle)
+      const o2 = ctx.createOscillator(); o2.type = 'sine'; o2.frequency.value = 98.0;
+      const g2 = ctx.createGain(); g2.gain.value = 0.15;
+      o2.connect(g2); g2.connect(conv); g2.connect(dry); o2.start(0);
+      // Sub octave
+      const o3 = ctx.createOscillator(); o3.type = 'sine'; o3.frequency.value = 32.7;
+      const g3 = ctx.createGain(); g3.gain.value = 0.2;
+      o3.connect(g3); g3.connect(dry); o3.start(0);
+      dry.connect(ctx.destination);
       break;
     }
     case 'vinyl': {
-      const ab = ctx.createBuffer(1, sr * dur, sr);
-      const d = ab.getChannelData(0);
-      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      // Vinyl crackle: white noise with bandpass + subtle low-frequency warble
+      const ab = noiseBuf(ctx, n => { const d = new Float32Array(n); for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1; return d; }, sr, dur);
       const src = ctx.createBufferSource(); src.buffer = ab;
       const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 800; bp.Q.value = 0.5;
+      // Add a subtle LFO wobble on the filter
+      const lfo = ctx.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 0.3;
+      const lfoG = ctx.createGain(); lfoG.gain.value = 200;
+      lfo.connect(lfoG); lfoG.connect(bp.frequency); lfo.start(0);
       src.connect(bp); bp.connect(ctx.destination); src.start(0);
       break;
     }
     case 'rain': {
-      const ab = ctx.createBuffer(1, sr * dur, sr);
-      ab.getChannelData(0).set(genPink(sr * dur));
+      // Rain: pink noise + bandpass with LFO sweep for patter variation
+      const ab = noiseBuf(ctx, genPink, sr, dur);
       const src = ctx.createBufferSource(); src.buffer = ab;
       const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 3000; bp.Q.value = 0.3;
-      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 5000;
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 6000;
+      // LFO sweeps the bandpass for natural rain variation
+      const lfo = ctx.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 0.15;
+      const lfoG = ctx.createGain(); lfoG.gain.value = 1500;
+      lfo.connect(lfoG); lfoG.connect(bp.frequency); lfo.start(0);
+      // Second layer: deeper rumble
+      const ab2 = noiseBuf(ctx, genBrown, sr, dur);
+      const src2 = ctx.createBufferSource(); src2.buffer = ab2;
+      const lp2 = ctx.createBiquadFilter(); lp2.type = 'lowpass'; lp2.frequency.value = 400;
+      const g2 = ctx.createGain(); g2.gain.value = 0.25;
+      src2.connect(lp2); lp2.connect(g2); g2.connect(ctx.destination); src2.start(0);
+
       src.connect(bp); bp.connect(lp); lp.connect(ctx.destination); src.start(0);
       break;
     }
     case 'wind': {
-      const ab = ctx.createBuffer(1, sr * dur, sr);
-      ab.getChannelData(0).set(genBrown(sr * dur));
+      // Wind: brown noise with slow LFO on bandpass for gusting
+      const ab = noiseBuf(ctx, genBrown, sr, dur);
       const src = ctx.createBufferSource(); src.buffer = ab;
       const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 600; bp.Q.value = 0.8;
-      src.connect(bp); bp.connect(ctx.destination); src.start(0);
+      // Slow gust LFO
+      const lfo = ctx.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 0.08;
+      const lfoG = ctx.createGain(); lfoG.gain.value = 400;
+      lfo.connect(lfoG); lfoG.connect(bp.frequency); lfo.start(0);
+      // Subtle volume swell for gusts
+      const volLfo = ctx.createOscillator(); volLfo.type = 'sine'; volLfo.frequency.value = 0.06;
+      const volG = ctx.createGain(); volG.gain.value = 0.3;
+      const master = ctx.createGain(); master.gain.value = 0.7;
+      volLfo.connect(volG); volG.connect(master.gain); volLfo.start(0);
+      src.connect(bp); bp.connect(master); master.connect(ctx.destination); src.start(0);
       break;
     }
     case 'cafe': {
-      const ab = ctx.createBuffer(1, sr * dur, sr);
-      ab.getChannelData(0).set(genPink(sr * dur));
-      const src = ctx.createBufferSource(); src.buffer = ab;
-      const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1200; bp.Q.value = 0.4;
-      src.connect(bp); bp.connect(ctx.destination); src.start(0);
+      // Cafe: layered pink noise (murmur) + white noise (clinks) + slight reverb
+      const conv = ctx.createConvolver();
+      conv.buffer = makeImpulse(ctx, 1.0, sr, sr * 2);
+      const wet = ctx.createGain(); wet.gain.value = 0.3;
+      conv.connect(wet); wet.connect(ctx.destination);
+
+      const ab1 = noiseBuf(ctx, genPink, sr, dur);
+      const src1 = ctx.createBufferSource(); src1.buffer = ab1;
+      const bp1 = ctx.createBiquadFilter(); bp1.type = 'bandpass'; bp1.frequency.value = 1200; bp1.Q.value = 0.4;
+      src1.connect(bp1); bp1.connect(conv); bp1.connect(ctx.destination); src1.start(0);
+
+      // High-freq clink layer
+      const ab2 = noiseBuf(ctx, n => { const d = new Float32Array(n); for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1; return d; }, sr, dur);
+      const src2 = ctx.createBufferSource(); src2.buffer = ab2;
+      const bp2 = ctx.createBiquadFilter(); bp2.type = 'bandpass'; bp2.frequency.value = 3500; bp2.Q.value = 1.5;
+      const g2 = ctx.createGain(); g2.gain.value = 0.12;
+      // LFO on clink volume for naturalness
+      const lfo = ctx.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 0.2;
+      const lfoG = ctx.createGain(); lfoG.gain.value = 0.1;
+      lfo.connect(lfoG); lfoG.connect(g2.gain); lfo.start(0);
+      src2.connect(bp2); bp2.connect(g2); g2.connect(conv); src2.start(0);
       break;
     }
     case 'crackling': {
-      const ab = ctx.createBuffer(1, sr * dur, sr);
-      const d = ab.getChannelData(0);
-      for (let i = 0; i < d.length; i++) d[i] = Math.random() > 0.97 ? (Math.random() * 2 - 1) : 0;
+      // Fireplace: sparse crackles + warm low rumble
+      const ab = ctx.createBuffer(2, sr * dur, sr);
+      for (let ch = 0; ch < 2; ch++) {
+        const d = ab.getChannelData(ch);
+        for (let i = 0; i < d.length; i++) {
+          const r = Math.random();
+          d[i] = r > 0.985 ? (Math.random() * 2 - 1) * 0.9
+               : r > 0.97 ? (Math.random() * 2 - 1) * 0.3
+               : (Math.random() - 0.5) * 0.02;
+        }
+      }
       const src = ctx.createBufferSource(); src.buffer = ab;
-      const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2500; bp.Q.value = 1;
-      src.connect(bp); bp.connect(ctx.destination); src.start(0);
+      const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2000; bp.Q.value = 0.8;
+      // Warm base layer
+      const ab2 = noiseBuf(ctx, genBrown, sr, dur);
+      const src2 = ctx.createBufferSource(); src2.buffer = ab2;
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 300;
+      const g2 = ctx.createGain(); g2.gain.value = 0.3;
+      src2.connect(lp); lp.connect(g2); g2.connect(ctx.destination); src2.start(0);
+      // Light reverb on crackles
+      const conv = ctx.createConvolver();
+      conv.buffer = makeImpulse(ctx, 0.5, sr, sr * 1);
+      const cg = ctx.createGain(); cg.gain.value = 0.4;
+      src.connect(bp); bp.connect(conv); conv.connect(cg); cg.connect(ctx.destination);
+      bp.connect(ctx.destination); // dry too
+      src.start(0);
       break;
     }
     case 'heartbeat': {
-      const beats = [0, 0.2, 1.0, 1.2];
-      beats.forEach(t => {
-        const osc = ctx.createOscillator(); osc.type = 'sine'; osc.frequency.value = 55;
+      // Richer heartbeat: sub sine + filtered thump with body
+      const conv = ctx.createConvolver();
+      conv.buffer = makeImpulse(ctx, 0.3, sr, sr * 1);
+      const cg = ctx.createGain(); cg.gain.value = 0.4;
+      conv.connect(cg); cg.connect(ctx.destination);
+
+      // 4 beats over 4 seconds (2 double-beats at 60bpm)
+      [0, 0.22, 1.0, 1.22, 2.0, 2.22, 3.0, 3.22].forEach((t, i) => {
+        const isFirst = i % 2 === 0;
+        const osc = ctx.createOscillator(); osc.type = 'sine'; osc.frequency.value = isFirst ? 50 : 65;
         const g = ctx.createGain();
         g.gain.setValueAtTime(0, t);
-        g.gain.linearRampToValueAtTime(0.8, t + 0.02);
-        g.gain.linearRampToValueAtTime(0, t + 0.3);
-        osc.connect(g); g.connect(ctx.destination);
-        osc.start(t); osc.stop(t + 0.35);
+        g.gain.linearRampToValueAtTime(isFirst ? 0.9 : 0.5, t + 0.015);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+        osc.connect(g); g.connect(conv); g.connect(ctx.destination);
+        osc.start(t); osc.stop(t + 0.4);
       });
       break;
     }
     case 'bowl': {
-      const freqs = [392, 493.88, 587.33, 783.99];
-      const times = [0, 4, 8, 12];
-      freqs.forEach((f, idx) => {
-        const osc = ctx.createOscillator(); osc.type = 'sine'; osc.frequency.value = f;
-        const g = ctx.createGain();
-        const t = times[idx];
-        g.gain.setValueAtTime(0, t);
-        g.gain.linearRampToValueAtTime(0.4, t + 0.3);
-        g.gain.exponentialRampToValueAtTime(0.001, t + 3.8);
-        osc.connect(g); g.connect(ctx.destination);
-        osc.start(t); osc.stop(t + 4);
+      // Singing bowl: sine fundamentals + harmonics with long reverb tail
+      const conv = ctx.createConvolver();
+      conv.buffer = makeImpulse(ctx, 5.0, sr, sr * 6);
+      const wet = ctx.createGain(); wet.gain.value = 0.7;
+      conv.connect(wet); wet.connect(ctx.destination);
+
+      const notes = [392, 493.88, 587.33, 783.99, 440, 523.25, 659.25, 392];
+      notes.forEach((freq, i) => {
+        const t = i * 4;
+        if (t >= dur) return;
+        // Fundamental
+        const o1 = ctx.createOscillator(); o1.type = 'sine'; o1.frequency.value = freq;
+        const g1 = ctx.createGain();
+        g1.gain.setValueAtTime(0, t);
+        g1.gain.linearRampToValueAtTime(0.25, t + 0.15);
+        g1.gain.exponentialRampToValueAtTime(0.001, t + 3.8);
+        o1.connect(g1); g1.connect(conv); g1.connect(ctx.destination);
+        o1.start(t); o1.stop(t + 4);
+        // Harmonic (2nd partial, quieter)
+        const o2 = ctx.createOscillator(); o2.type = 'sine'; o2.frequency.value = freq * 2.01;
+        const g2 = ctx.createGain();
+        g2.gain.setValueAtTime(0, t);
+        g2.gain.linearRampToValueAtTime(0.08, t + 0.1);
+        g2.gain.exponentialRampToValueAtTime(0.001, t + 2.5);
+        o2.connect(g2); g2.connect(conv);
+        o2.start(t); o2.stop(t + 3);
+        // 3rd partial (very subtle shimmer)
+        const o3 = ctx.createOscillator(); o3.type = 'sine'; o3.frequency.value = freq * 3.02;
+        const g3 = ctx.createGain();
+        g3.gain.setValueAtTime(0, t);
+        g3.gain.linearRampToValueAtTime(0.03, t + 0.05);
+        g3.gain.exponentialRampToValueAtTime(0.001, t + 1.5);
+        o3.connect(g3); g3.connect(conv);
+        o3.start(t); o3.stop(t + 2);
       });
       break;
     }
     case 'lofi': {
+      // Lo-fi: triangle chords through lowpass + reverb, with vinyl layer
+      const conv = ctx.createConvolver();
+      conv.buffer = makeImpulse(ctx, 2.5, sr, sr * 3);
+      const wet = ctx.createGain(); wet.gain.value = 0.5;
+      const flp = ctx.createBiquadFilter(); flp.type = 'lowpass'; flp.frequency.value = 1200;
+      conv.connect(flp); flp.connect(wet); wet.connect(ctx.destination);
+
       const chords = [
-        [293.66, 349.23, 440, 523.25],
-        [196, 246.94, 293.66, 349.23],
-        [261.63, 329.63, 392, 493.88],
-        [220, 261.63, 329.63, 392]
+        [293.66,349.23,440,523.25],[196,246.94,293.66,349.23],
+        [261.63,329.63,392,493.88],[220,261.63,329.63,392],
+        [293.66,349.23,440,523.25],[246.94,311.13,369.99,493.88],
+        [261.63,329.63,392,493.88],[220,277.18,329.63,440]
       ];
-      const times = [0, 4, 8, 12];
       chords.forEach((chord, ci) => {
-        const t = times[ci];
+        const t = ci * 4;
+        if (t >= dur) return;
         chord.forEach(freq => {
           const osc = ctx.createOscillator(); osc.type = 'triangle'; osc.frequency.value = freq;
           const g = ctx.createGain();
           g.gain.setValueAtTime(0, t);
-          g.gain.linearRampToValueAtTime(0.15, t + 0.5);
-          g.gain.linearRampToValueAtTime(0.12, t + 2.5);
-          g.gain.exponentialRampToValueAtTime(0.001, t + 3.9);
-          osc.connect(g); g.connect(ctx.destination);
+          g.gain.linearRampToValueAtTime(0.07, t + 0.4);
+          g.gain.setValueAtTime(0.06, t + 2.0);
+          g.gain.exponentialRampToValueAtTime(0.001, t + 3.8);
+          osc.connect(g); g.connect(conv); g.connect(ctx.destination);
           osc.start(t); osc.stop(t + 4);
         });
       });
+      // Subtle vinyl crackle layer baked in
+      const vab = noiseBuf(ctx, n => { const d = new Float32Array(n); for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1; return d; }, sr, dur);
+      const vs = ctx.createBufferSource(); vs.buffer = vab;
+      const vbp = ctx.createBiquadFilter(); vbp.type = 'bandpass'; vbp.frequency.value = 900; vbp.Q.value = 0.6;
+      const vg = ctx.createGain(); vg.gain.value = 0.04;
+      vs.connect(vbp); vbp.connect(vg); vg.connect(ctx.destination); vs.start(0);
       break;
     }
   }
 
   const rendered = await ctx.startRendering();
-  // Crossfade the loop point: blend last 0.5s with first 0.5s for seamless looping
-  const fadeLen = Math.min(Math.floor(sr * 0.5), rendered.length / 4);
+  // Crossfade the loop point for seamless looping (1s fade for longer loops)
+  const fadeSec = dur >= 16 ? 1.5 : 0.8;
+  const fadeLen = Math.min(Math.floor(sr * fadeSec), rendered.length / 4);
   for (let ch = 0; ch < rendered.numberOfChannels; ch++) {
     const d = rendered.getChannelData(ch);
     for (let i = 0; i < fadeLen; i++) {
