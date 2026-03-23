@@ -255,35 +255,48 @@ function ensureNode(k){
     const rv=new Tone.Reverb({decay:8,wet:.7});s.connect(rv);rv.connect(g);s.triggerAttack("C2")
   }
   else if(k==="lofi"){
-    const rv=new Tone.Reverb({decay:3.5,wet:.55}),fl=new Tone.Filter(1100,"lowpass");rv.connect(fl);fl.connect(g);
-    const sy=new Tone.PolySynth(Tone.Synth,{maxPolyphony:8,options:{oscillator:{type:"triangle"},envelope:{attack:.35,decay:1,sustain:.35,release:1.8},volume:-13}});sy.connect(rv);
-    // 32-chord jazz progression: ii-V-I cycles through keys with extensions and color tones
+    // ── CHILLHOP ENGINE ──
+    // Layer 1: Rhodes-like keys (sine+triangle detuned for warmth)
+    const rv=new Tone.Reverb({decay:4,wet:.45});const fl=new Tone.Filter(900,"lowpass");rv.connect(fl);fl.connect(g);
+    const rhodes=new Tone.PolySynth(Tone.Synth,{maxPolyphony:8,options:{oscillator:{type:"fatsine",spread:12,count:3},envelope:{attack:.08,decay:1.2,sustain:.3,release:2.2},volume:-14}});rhodes.connect(rv);
+    // Layer 2: warm synth pad underneath (slow attack, fills space)
+    const padRv=new Tone.Reverb({decay:6,wet:.6});padRv.connect(g);
+    const pad=new Tone.PolySynth(Tone.Synth,{maxPolyphony:6,options:{oscillator:{type:"sine"},envelope:{attack:1.5,decay:2,sustain:.5,release:3},volume:-20}});pad.connect(padRv);
+    // Layer 3: sub-bass (follows root notes)
+    const subF=new Tone.Filter(120,"lowpass");subF.connect(g);
+    const sub=new Tone.Synth({oscillator:{type:"sine"},envelope:{attack:.1,decay:.6,sustain:.4,release:1},volume:-16});sub.connect(subF);
+    // 32-chord chillhop progression with roots for sub-bass
     const ch=[
-      // A section — Dm9 → G13 → Cmaj9 → Cmaj9 (classic ii-V-I in C)
-      ["D3","F3","A3","C4","E4"],["G3","B3","D4","F4","E4"],["C3","E3","G3","B3","D4"],["C3","E3","G3","B3","D4"],
-      // → Em9 → A13 → Dmaj9 → Dmaj9 (ii-V-I in D)
-      ["E3","G3","B3","D4","F#4"],["A3","C#4","E4","G4","F#4"],["D3","F#3","A3","C#4","E4"],["D3","F#3","A3","C#4","E4"],
-      // B section — Fm9 → Bb13 → Ebmaj9 → Ebmaj9 (ii-V-I in Eb)
-      ["F3","Ab3","C4","Eb4","G4"],["Bb3","D4","F4","Ab4","G4"],["Eb3","G3","Bb3","D4","F4"],["Eb3","G3","Bb3","D4","F4"],
-      // → Abmaj7 → Db9 → Gbmaj7 → Gbmaj7 (IV-bVII-bIII)
-      ["Ab3","C4","Eb4","G4"],["Db3","F3","Ab3","Cb4","Eb4"],["Gb3","Bb3","Db4","F4"],["Gb3","Bb3","Db4","F4"],
-      // C section — Cm9 → F13 → Bbmaj9 → Bbmaj9 (ii-V-I in Bb)
-      ["C3","Eb3","G3","Bb3","D4"],["F3","A3","C4","Eb4","D4"],["Bb2","D3","F3","A3","C4"],["Bb2","D3","F3","A3","C4"],
-      // → Am9 → D13 → Gmaj9 → Gmaj9 (ii-V-I in G)
-      ["A3","C4","E4","G4","B4"],["D3","F#3","A3","C4","B3"],["G3","B3","D4","F#4","A4"],["G3","B3","D4","F#4","A4"],
-      // D section — Bbm9 → Eb13 → Abmaj9 → Abmaj9 (ii-V-I in Ab)
-      ["Bb3","Db4","F4","Ab4","C5"],["Eb3","G3","Bb3","Db4","C4"],["Ab3","C4","Eb4","G4","Bb4"],["Ab3","C4","Eb4","G4","Bb4"],
-      // → Dm11 → G7#11 → Cmaj13 → Cmaj13 (return home with extensions)
-      ["D3","F3","A3","C4","G4"],["G3","B3","D4","F#4","E4"],["C3","E3","G3","B3","A4"],["C3","E3","G3","B3","A4"]
+      // A: Dm9 → G13 → Cmaj9 → Am7
+      {k:["D4","F4","A4","C5","E5"],r:"D2"},{k:["G3","B3","D4","F4","E4"],r:"G2"},{k:["C4","E4","G4","B4","D5"],r:"C2"},{k:["A3","C4","E4","G4","B4"],r:"A1"},
+      // Fm9 → Bb13 → Ebmaj9 → Cm7
+      {k:["F4","Ab4","C5","Eb5","G5"],r:"F2"},{k:["Bb3","D4","F4","Ab4","G4"],r:"Bb1"},{k:["Eb4","G4","Bb4","D5","F5"],r:"Eb2"},{k:["C4","Eb4","G4","Bb4"],r:"C2"},
+      // B: Em9 → A13 → Dmaj9 → Bm7
+      {k:["E4","G4","B4","D5","F#5"],r:"E2"},{k:["A3","C#4","E4","G4","F#4"],r:"A1"},{k:["D4","F#4","A4","C#5","E5"],r:"D2"},{k:["B3","D4","F#4","A4"],r:"B1"},
+      // Abmaj9 → Db9 → Gbmaj7 → Ebm7
+      {k:["Ab3","C4","Eb4","G4","Bb4"],r:"Ab1"},{k:["Db4","F4","Ab4","Cb5","Eb5"],r:"Db2"},{k:["Gb3","Bb3","Db4","F4"],r:"Gb1"},{k:["Eb4","Gb4","Bb4","Db5"],r:"Eb2"},
+      // C: Cm9 → F13 → Bbmaj9 → Gm7
+      {k:["C4","Eb4","G4","Bb4","D5"],r:"C2"},{k:["F3","A3","C4","Eb4","D4"],r:"F2"},{k:["Bb3","D4","F4","A4","C5"],r:"Bb1"},{k:["G3","Bb3","D4","F4"],r:"G2"},
+      // Am9 → D13 → Gmaj9 → Em7
+      {k:["A3","C4","E4","G4","B4"],r:"A1"},{k:["D4","F#4","A4","C5","B4"],r:"D2"},{k:["G3","B3","D4","F#4","A4"],r:"G2"},{k:["E3","G3","B3","D4"],r:"E2"},
+      // D: Bbm9 → Eb13 → Abmaj9 → Fm7
+      {k:["Bb3","Db4","F4","Ab4","C5"],r:"Bb1"},{k:["Eb3","G3","Bb3","Db4","C4"],r:"Eb2"},{k:["Ab3","C4","Eb4","G4","Bb4"],r:"Ab1"},{k:["F3","Ab3","C4","Eb4"],r:"F2"},
+      // Dm11 → G7#11 → Cmaj13 → Cmaj13 (home)
+      {k:["D4","F4","A4","C5","G5"],r:"D2"},{k:["G3","B3","D4","F#4","E4"],r:"G2"},{k:["C4","E4","G4","B4","A4"],r:"C2"},{k:["C4","E4","G4","B4","A4"],r:"C2"}
     ];
-    let i=0;
-    // Humanize: slight velocity and timing variation
-    const lp=new Tone.Loop(t=>{
-      const vel=.45+Math.random()*.15;
-      sy.triggerAttackRelease(ch[i%32],"2n",t+Math.random()*.04,vel);
-      i++;
+    let ci=0;
+    Tone.getTransport().bpm.value=72;
+    // Rhodes hits every bar — tighter chillhop feel
+    const keysLoop=new Tone.Loop(t=>{
+      const c=ch[ci%32];const vel=.4+Math.random()*.2;
+      rhodes.triggerAttackRelease(c.k,"2n",t+Math.random()*.025,vel);
+      // Sub follows root
+      sub.triggerAttackRelease(c.r,"2n",t+.04);
+      // Pad plays every other chord
+      if(ci%2===0)pad.triggerAttackRelease(c.k.slice(0,3),"1m",t+.08,.3+Math.random()*.1);
+      ci++;
     },"1m");
-    Tone.getTransport().bpm.value=75;lp.start(0)
+    keysLoop.start(0);
   }
   else if(k==="vinyl"){
     const s=new Tone.Noise("white");const f=new Tone.Filter({frequency:800,type:"bandpass",Q:.5});s.connect(f);f.connect(g);s.start()
@@ -403,53 +416,64 @@ function ensureNode(k){
     });
   }
   else if(k==="perc"){
-    // Lo-fi boom-bap: muted kick, vinyl snare, ghost hat, shaker — humanized
-    const rv=new Tone.Reverb({decay:2,wet:.5});rv.connect(g);
-    const warmF=new Tone.Filter(700,"lowpass");warmF.connect(rv);
-    // Muted kick — deep, short, pillowy
-    const kick=new Tone.MembraneSynth({pitchDecay:.04,octaves:2.5,envelope:{attack:.005,decay:.2,sustain:0,release:.25},volume:-16});
+    // ── CHILLHOP DRUMS — heavier, groovier ──
+    const rv=new Tone.Reverb({decay:1.8,wet:.4});rv.connect(g);
+    const warmF=new Tone.Filter(900,"lowpass");warmF.connect(rv);
+    // Fat kick — punchier, more presence
+    const kick=new Tone.MembraneSynth({pitchDecay:.05,octaves:3,envelope:{attack:.003,decay:.3,sustain:0,release:.35},volume:-10});
     kick.connect(warmF);
-    // Snare — noise burst through bandpass for that dusty lo-fi snap
-    const snare=new Tone.NoiseSynth({noise:{type:"pink"},envelope:{attack:.003,decay:.12,sustain:0,release:.08},volume:-20});
-    const snareBp=new Tone.Filter({frequency:1800,type:"bandpass",Q:.8});snare.connect(snareBp);snareBp.connect(rv);
-    // Closed hat — very quiet, high-freq tick
-    const hat=new Tone.NoiseSynth({noise:{type:"white"},envelope:{attack:.001,decay:.04,sustain:0,release:.02},volume:-26});
-    const hatHp=new Tone.Filter(7000,"highpass");const hatLp=new Tone.Filter(600,"lowpass");hat.connect(hatHp);hatHp.connect(hatLp);hatLp.connect(rv);
-    // Shaker — softer, wider
-    const shaker=new Tone.NoiseSynth({noise:{type:"white"},envelope:{attack:.005,decay:.06,sustain:0,release:.04},volume:-24});
-    const shakerF=new Tone.Filter({frequency:5000,type:"highpass"});shaker.connect(shakerF);shakerF.connect(rv);
-    Tone.getTransport().bpm.value=75;
-    // 2-bar boom-bap pattern with ghost notes and swing
-    // Kick: 1, and-of-2, 1 (second bar), and-of-3
+    // Snare — dusty, punchy
+    const snare=new Tone.NoiseSynth({noise:{type:"pink"},envelope:{attack:.002,decay:.15,sustain:0,release:.1},volume:-14});
+    const snareBp=new Tone.Filter({frequency:2200,type:"bandpass",Q:.6});snare.connect(snareBp);snareBp.connect(rv);
+    // Closed hat — crisp tick
+    const hat=new Tone.NoiseSynth({noise:{type:"white"},envelope:{attack:.001,decay:.05,sustain:0,release:.03},volume:-18});
+    const hatHp=new Tone.Filter(6000,"highpass");hat.connect(hatHp);hatHp.connect(rv);
+    // Open hat — longer decay
+    const ohat=new Tone.NoiseSynth({noise:{type:"white"},envelope:{attack:.002,decay:.18,sustain:.05,release:.12},volume:-20});
+    const ohatBp=new Tone.Filter({frequency:5000,type:"highpass"});ohat.connect(ohatBp);ohatBp.connect(rv);
+    // Rim click — short metallic tap
+    const rim=new Tone.MetalSynth({frequency:400,envelope:{attack:.001,decay:.06,release:.04},harmonicity:0.1,modulationIndex:2,resonance:800,octaves:.5,volume:-22});
+    rim.connect(rv);
+    Tone.getTransport().bpm.value=72;
+    // 4-bar chillhop pattern (32 sixteenth-notes per 2 bars, 64 total)
     let beat=0;
-    const swing=.035; // subtle swing feel
+    const sw=.025; // swing
     const mainLoop=new Tone.Loop(t=>{
-      const b=beat%16; // 16 eighth-notes = 2 bars
-      const h=()=>Math.random()*.02; // humanize timing
-      // Kick pattern
-      if(b===0||b===3||b===8||b===11){
-        kick.triggerAttackRelease("C1","8n",t+h());
+      const b=beat%32; // 32 sixteenth-notes = 2 bars
+      const h=()=>Math.random()*.015;
+      const swt=(b%2===1)?sw:0;
+      // Kick: heavy on 1, ghost on and-of-2, 3, and-of-4
+      if(b===0||b===6||b===10||b===16||b===22||b===26){
+        kick.triggerAttackRelease("C1","16n",t+h());
       }
-      // Snare on 2 and 4 (beats 4,12 in eighth-notes) — ghosted
-      if(b===4||b===12){
-        const vel=.3+Math.random()*.15;
-        snare.triggerAttackRelease("16n",t+h()+swing);
+      // Ghost kick
+      if((b===13||b===29)&&Math.random()>.5){
+        kick.triggerAttackRelease("C1","32n",t+h());
       }
-      // Ghost snare hits
-      if((b===6||b===14)&&Math.random()>.4){
-        snare.triggerAttackRelease("32n",t+h()+swing);
+      // Snare on 2 and 4 (positions 8 and 24)
+      if(b===8||b===24){
+        snare.triggerAttackRelease("16n",t+h()+sw);
       }
-      // Hat on every eighth note — varying velocity for groove
-      const hatVel=(b%2===0)?.15:.08+Math.random()*.05;
-      if(Math.random()>.15){// occasionally skip a hat for breath
-        hat.triggerAttackRelease("32n",t+h()+(b%2?swing:0));
+      // Ghost snare
+      if((b===12||b===20||b===28)&&Math.random()>.45){
+        snare.triggerAttackRelease("32n",t+h()+swt);
       }
-      // Shaker on upbeats
-      if(b%2===1&&Math.random()>.3){
-        shaker.triggerAttackRelease("32n",t+h()+swing);
+      // Hats: every other sixteenth with swing — the backbone
+      if(b%2===0){
+        hat.triggerAttackRelease("32n",t+h());
+      } else if(Math.random()>.25){
+        hat.triggerAttackRelease("32n",t+h()+sw);
+      }
+      // Open hat on upbeats occasionally
+      if((b===4||b===14||b===20||b===30)&&Math.random()>.55){
+        ohat.triggerAttackRelease("16n",t+h()+sw);
+      }
+      // Rim click — sparse texture
+      if((b===5||b===21)&&Math.random()>.6){
+        rim.triggerAttackRelease("32n",t+h()+swt);
       }
       beat++;
-    },"8n");
+    },"16n");
     mainLoop.start(0);
   }
 
