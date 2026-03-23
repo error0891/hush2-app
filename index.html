@@ -376,11 +376,15 @@ function ensureNode(k){
     s2.connect(bp2);bp2.connect(g2);g2.connect(g);s2.start()
   }
   else if(k==="stream"){
-    // Small stream — thin, high-pitched, narrow trickle
-    const water=new Tone.Noise("white");
-    const waterBp=new Tone.Filter({frequency:4500,type:"bandpass",Q:2.5});
-    const waterG=new Tone.Gain(.3);
-    water.connect(waterBp);waterBp.connect(waterG);waterG.connect(g);water.start();
+    // Real recording of a gentle stream (CC BY 4.0 — freesoundslibrary.com)
+    const audio=new Audio("stream.mp3");
+    audio.loop=true;audio.volume=1;
+    // Connect to Web Audio for gain control
+    const src=Tone.context.createMediaElementSource(audio);
+    src.connect(g);
+    audio.play().catch(()=>{});
+    // Store ref so we can stop it
+    nodes[k]=nodes[k]||{};nodes[k]._audio=audio;
   }
   else if(k==="birds"){
     // Bird chirps: random sine blips at nature frequencies with reverb
@@ -469,17 +473,17 @@ function ensureNode(k){
       bodyFl.frequency.setValueAtTime(300,now);
       foamGn.gain.setValueAtTime(0,now);
       boomGn.gain.setValueAtTime(.05,now);
-      // Build: 0→5s — gradual swell
-      bodyGn.gain.linearRampToValueAtTime(.5,now+5);
-      bodyFl.frequency.linearRampToValueAtTime(1200,now+5);
-      boomGn.gain.linearRampToValueAtTime(.25,now+5);
-      // Crash peak: 5→6s — burst of foam + max volume
-      bodyGn.gain.linearRampToValueAtTime(.65,now+6);
-      bodyFl.frequency.linearRampToValueAtTime(1800,now+6);
-      foamGn.gain.linearRampToValueAtTime(.2,now+5.5);
-      boomGn.gain.linearRampToValueAtTime(.35,now+5.5);
+      // Build: 0→5s — gradual swell (moderate peak)
+      bodyGn.gain.linearRampToValueAtTime(.3,now+5);
+      bodyFl.frequency.linearRampToValueAtTime(900,now+5);
+      boomGn.gain.linearRampToValueAtTime(.15,now+5);
+      // Crash peak: 5→6s — moderate foam + controlled volume
+      bodyGn.gain.linearRampToValueAtTime(.4,now+6);
+      bodyFl.frequency.linearRampToValueAtTime(1200,now+6);
+      foamGn.gain.linearRampToValueAtTime(.12,now+5.5);
+      boomGn.gain.linearRampToValueAtTime(.2,now+5.5);
       // Flow: 6→9s — sustain with foam fading
-      bodyGn.gain.linearRampToValueAtTime(.45,now+9);
+      bodyGn.gain.linearRampToValueAtTime(.28,now+9);
       bodyFl.frequency.linearRampToValueAtTime(900,now+9);
       foamGn.gain.linearRampToValueAtTime(.06,now+9);
       boomGn.gain.linearRampToValueAtTime(.1,now+9);
@@ -533,7 +537,11 @@ function ensureNode(k){
 function setVol(k,v){vols[k]=v;if(nodes[k])nodes[k].g.gain.rampTo(v,.5)}
 function startTransport(){if(Tone.getTransport().state!=="started")Tone.getTransport().start()}
 function stopAll(){
-  Object.keys(nodes).forEach(k=>nodes[k].g.gain.rampTo(0,.3));
+  Object.keys(nodes).forEach(k=>{
+    nodes[k].g.gain.rampTo(0,.3);
+    // Stop any audio elements (e.g. stream recording)
+    if(nodes[k]._audio){nodes[k]._audio.pause();nodes[k]._audio.currentTime=0}
+  });
   setTimeout(()=>Tone.getTransport().stop(),400);
   playing=false;clearInterval(timerInterval);timeLeft=null;updatePlayUI()
 }
