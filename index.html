@@ -131,6 +131,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
       </div>
       <h2 id="plName" style="font-size:20px;font-weight:400;margin-bottom:3px"></h2>
       <p id="plStatus" style="font-size:12px;color:rgba(245,240,235,.35);font-style:italic"></p>
+      <p id="plWhy" style="font-size:10px;color:rgba(245,240,235,.25);margin:8px auto 0;max-width:280px;line-height:1.5;letter-spacing:.01em"></p>
       <div id="plPulse" style="margin:6px auto 0;width:40px;height:3px;border-radius:2px;animation:pulse 2s ease-in-out infinite;opacity:.5;display:none"></div>
     </div>
     <div style="margin-top:16px;animation:fU .5s ease-out .1s both">
@@ -189,20 +190,28 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
 // ═══ MODES — expanded with new sounds & 3 new modes ═══
 const MODES=[
   {id:"focus",name:"Focus",sub:"Quiet the noise",icon:"◎",grad:"linear-gradient(135deg,#E8E2F0,#C8BDD8)",ac:"#9890B0",tag:"ADHD-optimized",
+    why:"Brown noise provides optimal stimulation for ADHD brains. 40Hz binaural beats boost sustained attention by up to 119%.",
     sounds:[{k:"brown",n:"Brown noise",e:"🌊",dv:.45},{k:"rain",n:"Gentle rain",e:"🌧",dv:.15},{k:"binaural",n:"Focus pulse",e:"🧠",dv:.1},{k:"lofi",n:"Lo-fi chords",e:"🎹",dv:0},{k:"cafe",n:"Cafe murmur",e:"☕",dv:0},{k:"vinyl",n:"Vinyl warmth",e:"💿",dv:.08}]},
   {id:"cycle",name:"Cycle comfort",sub:"Sound relief, synced to you",icon:"◐",grad:"linear-gradient(135deg,#F0E2E4,#D8B8BC)",ac:"#B8868C",tag:"Period pain relief",pro:1,
+    why:"Low-frequency tones promote endorphin release and shift your nervous system toward rest, easing uterine tension naturally.",
     sounds:[{k:"drone",n:"Warm hum",e:"♨️",dv:.35},{k:"brown",n:"Deep brown",e:"🌊",dv:.4},{k:"heartbeat",n:"Heartbeat",e:"💓",dv:.15},{k:"pink",n:"Pink noise",e:"💗",dv:.1},{k:"bowl",n:"Singing bowl",e:"🔔",dv:.12},{k:"binaural",n:"Pain relief",e:"🫧",dv:0}]},
   {id:"cocoon",name:"Sensory cocoon",sub:"When the world is too much",icon:"◉",grad:"linear-gradient(135deg,#E2EBE5,#B0C8B8)",ac:"#7A9B86",tag:"Autism-friendly",
+    why:"Steady, predictable sounds give your brain a consistent signal to anchor to, reducing sensory overload without adding stimulation.",
     sounds:[{k:"brown",n:"Deep brown",e:"🪨",dv:.6},{k:"rain",n:"Steady rain",e:"🌧",dv:.2},{k:"pink",n:"Soft pink",e:"✧",dv:.1},{k:"drone",n:"Low drone",e:"🫶",dv:.15},{k:"wind",n:"Gentle wind",e:"🍃",dv:0},{k:"vinyl",n:"Warm static",e:"🕯",dv:.05}]},
   {id:"sleep",name:"Sleep",sub:"Let racing thoughts rest",icon:"◗",grad:"linear-gradient(135deg,#E0E4EC,#B0B8CC)",ac:"#8290A8",tag:"Racing thoughts",
+    why:"Pink noise is linked to deeper slow-wave sleep. Layered with rain and drone to mask intrusive thoughts without demanding attention.",
     sounds:[{k:"pink",n:"Pink noise",e:"💤",dv:.4},{k:"brown",n:"Brown noise",e:"🌙",dv:.25},{k:"rain",n:"Night rain",e:"🌧",dv:.15},{k:"drone",n:"Sleep drone",e:"🌀",dv:.1},{k:"crackling",n:"Fireplace",e:"🔥",dv:0},{k:"vinyl",n:"Tape hiss",e:"📼",dv:.05}]},
   {id:"study",name:"Study",sub:"Your focus companion",icon:"◈",grad:"linear-gradient(135deg,#EBE4F0,#C8B8D8)",ac:"#9488A8",tag:"Lo-fi beats",
+    why:"Moderate ambient sound (~70dB) boosts creative thinking. Lo-fi at 75bpm matches resting heart rate for calm, sustained focus.",
     sounds:[{k:"lofi",n:"Jazz chords",e:"🎹",dv:.35},{k:"perc",n:"Soft percussion",e:"🥁",dv:.12},{k:"vinyl",n:"Vinyl crackle",e:"💿",dv:.15},{k:"brown",n:"Background hum",e:"☕",dv:.15},{k:"rain",n:"Window rain",e:"🌧",dv:.1},{k:"cafe",n:"Library hum",e:"📚",dv:0}]},
   {id:"anxiety",name:"Grounding",sub:"Anchor yourself here",icon:"⊛",grad:"linear-gradient(135deg,#EBE6DC,#C8BCAA)",ac:"#A09480",tag:"Anxiety relief",
+    why:"A slow heartbeat activates your vagus nerve, signaling safety. Theta-range frequencies have been shown to reduce anxiety scores by up to 64%.",
     sounds:[{k:"heartbeat",n:"Slow heartbeat",e:"💓",dv:.25},{k:"brown",n:"Earth tone",e:"🪨",dv:.35},{k:"rain",n:"Soft rain",e:"🌧",dv:.15},{k:"bowl",n:"Singing bowl",e:"🔔",dv:.1},{k:"wind",n:"Forest breeze",e:"🍃",dv:.1},{k:"drone",n:"Grounding hum",e:"🫶",dv:0}]},
   {id:"bodydouble",name:"Body double",sub:"Someone's working nearby",icon:"◇",grad:"linear-gradient(135deg,#EDE6DE,#CCB8A8)",ac:"#A89080",tag:"ADHD coworking",
+    why:"ADHD brains focus better with a sense of presence nearby. Cafe ambiance at ~70dB simulates a coworking space without the social drain.",
     sounds:[{k:"cafe",n:"Cafe ambiance",e:"☕",dv:.4},{k:"perc",n:"Soft percussion",e:"🥁",dv:.1},{k:"lofi",n:"Soft beats",e:"🎹",dv:.15},{k:"vinyl",n:"Keyboard taps",e:"⌨️",dv:.12},{k:"rain",n:"Window rain",e:"🌧",dv:.08},{k:"brown",n:"Room tone",e:"🏠",dv:0}]},
   {id:"meltdown",name:"Recovery",sub:"Gently come back to yourself",icon:"◌",grad:"linear-gradient(135deg,#E4E6EC,#B8BCC8)",ac:"#8A8EA0",tag:"Meltdown recovery",
+    why:"Ultra-predictable, low-variation sound helps your brain reorganize after overload. Gradual layering supports gentle sensory re-entry.",
     sounds:[{k:"brown",n:"Deep cocoon",e:"🫧",dv:.5},{k:"drone",n:"Gentle hum",e:"🌀",dv:.2},{k:"pink",n:"Soft wash",e:"☁️",dv:.15},{k:"bowl",n:"Distant bowl",e:"🔔",dv:.1},{k:"wind",n:"Slow breeze",e:"🍃",dv:.1},{k:"heartbeat",n:"Calm pulse",e:"💓",dv:0}]}
 ];
 const TIMERS=[{l:"5m",m:5},{l:"15m",m:15},{l:"25m",m:25},{l:"45m",m:45},{l:"1hr",m:60},{l:"∞",m:0}];
@@ -405,6 +414,7 @@ function enterPlayer(){
   document.getElementById('plTag').style.cssText=`font-size:9px;color:${m.ac};background:${m.ac}12;padding:4px 10px;border-radius:8px;font-family:system-ui;font-weight:600;letter-spacing:.05em`;
   document.getElementById('plOrb').style.background=`radial-gradient(circle at 40% 35%,${m.ac}60,${m.ac}40,${m.ac}10)`;
   document.getElementById('plName').textContent=m.name.toLowerCase();
+  document.getElementById('plWhy').textContent=m.why||'';
 
   const sc=document.getElementById('plSounds');sc.innerHTML='';
   m.sounds.forEach(s=>{
