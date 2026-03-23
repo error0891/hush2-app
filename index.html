@@ -258,7 +258,7 @@ function ensureNode(k){
     // ── CHILLHOP ENGINE ──
     // Layer 1: Rhodes-like keys (sine+triangle detuned for warmth)
     const rv=new Tone.Reverb({decay:4,wet:.45});const fl=new Tone.Filter(900,"lowpass");rv.connect(fl);fl.connect(g);
-    const rhodes=new Tone.PolySynth(Tone.Synth,{maxPolyphony:8,options:{oscillator:{type:"fatsine",spread:12,count:3},envelope:{attack:.08,decay:1.2,sustain:.3,release:2.2},volume:-14}});rhodes.connect(rv);
+    const rhodes=new Tone.PolySynth(Tone.Synth,{maxPolyphony:8,options:{oscillator:{type:"fatsine",spread:12,count:3},envelope:{attack:.12,decay:2,sustain:.45,release:3.5},volume:-14}});rhodes.connect(rv);
     // Layer 2: warm synth pad underneath (slow attack, fills space)
     const padRv=new Tone.Reverb({decay:6,wet:.6});padRv.connect(g);
     const pad=new Tone.PolySynth(Tone.Synth,{maxPolyphony:6,options:{oscillator:{type:"sine"},envelope:{attack:1.5,decay:2,sustain:.5,release:3},volume:-20}});pad.connect(padRv);
@@ -289,9 +289,9 @@ function ensureNode(k){
     // Rhodes hits every bar — tighter chillhop feel
     const keysLoop=new Tone.Loop(t=>{
       const c=ch[ci%32];const vel=.4+Math.random()*.2;
-      rhodes.triggerAttackRelease(c.k,"2n",t+Math.random()*.025,vel);
+      rhodes.triggerAttackRelease(c.k,"1m",t+Math.random()*.025,vel);
       // Sub follows root
-      sub.triggerAttackRelease(c.r,"2n",t+.04);
+      sub.triggerAttackRelease(c.r,"1m",t+.04);
       // Pad plays every other chord
       if(ci%2===0)pad.triggerAttackRelease(c.k.slice(0,3),"1m",t+.08,.3+Math.random()*.1);
       ci++;
@@ -416,64 +416,35 @@ function ensureNode(k){
     });
   }
   else if(k==="perc"){
-    // ── CHILLHOP DRUMS — heavier, groovier ──
-    const rv=new Tone.Reverb({decay:1.8,wet:.4});rv.connect(g);
-    const warmF=new Tone.Filter(900,"lowpass");warmF.connect(rv);
-    // Fat kick — punchier, more presence
-    const kick=new Tone.MembraneSynth({pitchDecay:.05,octaves:3,envelope:{attack:.003,decay:.3,sustain:0,release:.35},volume:-10});
+    // ── CHILLHOP DRUMS — kick-dominant, minimal highs ──
+    const rv=new Tone.Reverb({decay:2.5,wet:.45});rv.connect(g);
+    const warmF=new Tone.Filter(600,"lowpass");warmF.connect(rv);
+    // Fat kick — deep, long, warm
+    const kick=new Tone.MembraneSynth({pitchDecay:.06,octaves:3,envelope:{attack:.005,decay:.5,sustain:.08,release:.6},volume:-10});
     kick.connect(warmF);
-    // Snare — dusty, punchy
-    const snare=new Tone.NoiseSynth({noise:{type:"pink"},envelope:{attack:.002,decay:.15,sustain:0,release:.1},volume:-14});
-    const snareBp=new Tone.Filter({frequency:2200,type:"bandpass",Q:.6});snare.connect(snareBp);snareBp.connect(rv);
-    // Closed hat — crisp tick
-    const hat=new Tone.NoiseSynth({noise:{type:"white"},envelope:{attack:.001,decay:.05,sustain:0,release:.03},volume:-18});
-    const hatHp=new Tone.Filter(6000,"highpass");hat.connect(hatHp);hatHp.connect(rv);
-    // Open hat — longer decay
-    const ohat=new Tone.NoiseSynth({noise:{type:"white"},envelope:{attack:.002,decay:.18,sustain:.05,release:.12},volume:-20});
-    const ohatBp=new Tone.Filter({frequency:5000,type:"highpass"});ohat.connect(ohatBp);ohatBp.connect(rv);
-    // Rim click — short metallic tap
-    const rim=new Tone.MetalSynth({frequency:400,envelope:{attack:.001,decay:.06,release:.04},harmonicity:0.1,modulationIndex:2,resonance:800,octaves:.5,volume:-22});
-    rim.connect(rv);
+    // Very soft snare — barely there, low-passed heavily
+    const snare=new Tone.NoiseSynth({noise:{type:"pink"},envelope:{attack:.005,decay:.2,sustain:0,release:.15},volume:-24});
+    const snareLp=new Tone.Filter({frequency:1200,type:"lowpass"});snare.connect(snareLp);snareLp.connect(rv);
     Tone.getTransport().bpm.value=72;
-    // 4-bar chillhop pattern (32 sixteenth-notes per 2 bars, 64 total)
+    // Kick-focused pattern, snare only on 4 (sparse)
     let beat=0;
-    const sw=.025; // swing
     const mainLoop=new Tone.Loop(t=>{
-      const b=beat%32; // 32 sixteenth-notes = 2 bars
+      const b=beat%16; // 16 eighth-notes = 2 bars
       const h=()=>Math.random()*.015;
-      const swt=(b%2===1)?sw:0;
-      // Kick: heavy on 1, ghost on and-of-2, 3, and-of-4
-      if(b===0||b===6||b===10||b===16||b===22||b===26){
-        kick.triggerAttackRelease("C1","16n",t+h());
+      // Kick: 1, and-of-2, 3, and-of-4 — the groove
+      if(b===0||b===3||b===8||b===11){
+        kick.triggerAttackRelease("C1","4n",t+h());
       }
-      // Ghost kick
-      if((b===13||b===29)&&Math.random()>.5){
-        kick.triggerAttackRelease("C1","32n",t+h());
+      // Ghost kick — subtle
+      if((b===6||b===14)&&Math.random()>.6){
+        kick.triggerAttackRelease("C1","8n",t+h());
       }
-      // Snare on 2 and 4 (positions 8 and 24)
-      if(b===8||b===24){
-        snare.triggerAttackRelease("16n",t+h()+sw);
-      }
-      // Ghost snare
-      if((b===12||b===20||b===28)&&Math.random()>.45){
-        snare.triggerAttackRelease("32n",t+h()+swt);
-      }
-      // Hats: every other sixteenth with swing — the backbone
-      if(b%2===0){
-        hat.triggerAttackRelease("32n",t+h());
-      } else if(Math.random()>.25){
-        hat.triggerAttackRelease("32n",t+h()+sw);
-      }
-      // Open hat on upbeats occasionally
-      if((b===4||b===14||b===20||b===30)&&Math.random()>.55){
-        ohat.triggerAttackRelease("16n",t+h()+sw);
-      }
-      // Rim click — sparse texture
-      if((b===5||b===21)&&Math.random()>.6){
-        rim.triggerAttackRelease("32n",t+h()+swt);
+      // Snare only on beat 4 of second bar — very quiet, muffled
+      if(b===12){
+        snare.triggerAttackRelease("8n",t+h()+.02);
       }
       beat++;
-    },"16n");
+    },"8n");
     mainLoop.start(0);
   }
 
