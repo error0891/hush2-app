@@ -224,7 +224,7 @@ const MODES=[
 const TIMERS=[{l:"5m",m:5},{l:"15m",m:15},{l:"25m",m:25},{l:"45m",m:45},{l:"1hr",m:60},{l:"∞",m:0}];
 
 let curMode=null,playing=false,selTimer=5,timeLeft=null,timerInterval=null,audioStarted=false;
-const nodes={},vols={};
+let nodes={},vols={};
 
 // ═══ AUDIO ENGINE ═══
 // Mobile-safe: always try to unlock on any user gesture
