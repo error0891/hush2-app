@@ -376,23 +376,12 @@ function ensureNode(k){
     s2.connect(bp2);bp2.connect(g2);g2.connect(g);s2.start()
   }
   else if(k==="stream"){
-    // Steady gentle trickle — constant, no pulsing, no LFOs on volume
-    // Layer 1: steady mid-high flow — pink noise through fixed bandpass, no modulation
-    const flow=new Tone.Noise("pink");
-    const flowBp=new Tone.Filter({frequency:2800,type:"bandpass",Q:0.5});
-    const flowG=new Tone.Gain(.22);
-    flow.connect(flowBp);flowBp.connect(flowG);flowG.connect(g);flow.start();
-    // Layer 2: constant soft high shimmer — white noise, fixed gain, no LFO
-    const shimmer=new Tone.Noise("white");
-    const shHp=new Tone.Filter(5000,"highpass");
-    const shLp=new Tone.Filter(10000,"lowpass");
-    const shG=new Tone.Gain(.03);
-    shimmer.connect(shHp);shHp.connect(shLp);shLp.connect(shG);shG.connect(g);shimmer.start();
-    // Layer 3: very gentle low body — steady, quiet
-    const body=new Tone.Noise("brown");
-    const bodyLp=new Tone.Filter(250,"lowpass");
-    const bodyG=new Tone.Gain(.06);
-    body.connect(bodyLp);bodyLp.connect(bodyG);bodyG.connect(g);body.start();
+    // Small stream / running water — steady, not foamy or bubbly
+    // Just gentle constant pink noise, heavily lowpassed for a soft "shhh" of water
+    const water=new Tone.Noise("pink");
+    const waterLp=new Tone.Filter(1400,"lowpass");
+    const waterG=new Tone.Gain(.35);
+    water.connect(waterLp);waterLp.connect(waterG);waterG.connect(g);water.start();
   }
   else if(k==="birds"){
     // Bird chirps: random sine blips at nature frequencies with reverb
