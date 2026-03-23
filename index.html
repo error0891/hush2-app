@@ -394,13 +394,16 @@ function ensureNode(k){
     s2.connect(bp2);bp2.connect(g2);g2.connect(g);s2.start()
   }
   else if(k==="stream"){
-    // Real recording of a gentle stream
+    // Real recording routed through Tone.js gain for proper volume control
     const audio=new Audio();
     audio.crossOrigin="anonymous";
     audio.preload="auto";
     audio.loop=true;
     audio.src="stream.mp3";
-    audio.volume=Math.min((vols[k]||0)*0.25,1);
+    audio.volume=1; // full volume on element — gain node controls actual level
+    // Connect audio element → Tone.js gain node
+    const src=Tone.context.createMediaElementSource(audio);
+    src.connect(g.input||g);
     function tryPlay(){
       const p=audio.play();
       if(p)p.catch(e=>{
@@ -411,8 +414,7 @@ function ensureNode(k){
     }
     audio.addEventListener("canplaythrough",tryPlay,{once:true});
     if(audio.readyState>=3)tryPlay();
-    nodes[k]={g,_audio:audio,_useAudioVol:true};
-    return;
+    nodes[k]={g,_audio:audio};
   }
   else if(k==="birds"){
     // Bird chirps: random sine blips at nature frequencies with reverb
@@ -585,11 +587,7 @@ function ensureNode(k){
 function setVol(k,v){
   vols[k]=v;
   if(!nodes[k])return;
-  if(nodes[k]._useAudioVol&&nodes[k]._audio){
-    nodes[k]._audio.volume=Math.min(v*0.25,1);
-  } else {
-    nodes[k].g.gain.rampTo(v,.5);
-  }
+  nodes[k].g.gain.rampTo(v,.5);
 }
 function startTransport(){if(Tone.getTransport().state!=="started")Tone.getTransport().start()}
 function stopAll(){
