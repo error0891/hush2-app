@@ -215,7 +215,7 @@ const MODES=[
     sounds:[{k:"heartbeat",n:"Slow heartbeat",e:"💓",dv:.25},{k:"brown",n:"Earth tone",e:"🪨",dv:.35},{k:"stream",n:"Flowing water",e:"💧",dv:.15},{k:"birds",n:"Distant birds",e:"🐦",dv:.08},{k:"wind",n:"Forest breeze",e:"🍃",dv:.1},{k:"bowl",n:"Singing bowl",e:"🔔",dv:.08}]},
   {id:"meditate",name:"Meditate",sub:"Still the mind, find the center",icon:"◎",grad:"linear-gradient(135deg,#E6E0D6,#C8BAA8)",ac:"#9E8E78",tag:"Mindfulness",pro:1,
     why:"Singing bowls at specific frequencies entrain brainwaves toward alpha and theta states. Combined with flowing water, they create an ideal anchor for meditation practice.",
-    sounds:[{k:"bowl",n:"Temple gong",e:"🔔",dv:.2},{k:"breath",n:"Breathing guide",e:"🫁",dv:.15},{k:"stream",n:"Flowing water",e:"💧",dv:.1},{k:"drone",n:"Om drone",e:"🕉",dv:.12},{k:"brown",n:"Stillness",e:"🪨",dv:.1},{k:"pink",n:"Soft silence",e:"☁️",dv:0}]},
+    sounds:[{k:"bowl",n:"Temple gong",e:"🔔",dv:.2},{k:"breath",n:"Breathing guide",e:"🫁",dv:.2},{k:"drone",n:"Om drone",e:"🕉",dv:.12},{k:"brown",n:"Stillness",e:"🪨",dv:.1},{k:"stream",n:"Flowing water",e:"💧",dv:.02},{k:"pink",n:"Soft silence",e:"☁️",dv:0}]},
   {id:"meltdown",name:"Recovery",sub:"Gently come back to yourself",icon:"◌",grad:"linear-gradient(135deg,#E4E6EC,#B8BCC8)",ac:"#8A8EA0",tag:"Meltdown recovery",pro:1,
     why:"Ultra-predictable, low-variation sound helps your brain reorganize after overload. Gradual layering supports gentle sensory re-entry.",
     sounds:[{k:"brown",n:"Deep cocoon",e:"🫧",dv:.5},{k:"drone",n:"Gentle hum",e:"🌀",dv:.2},{k:"pink",n:"Soft wash",e:"☁️",dv:.15},{k:"bowl",n:"Distant bowl",e:"🔔",dv:.1},{k:"wind",n:"Slow breeze",e:"🍃",dv:.1},{k:"heartbeat",n:"Calm pulse",e:"💓",dv:0}]},
@@ -507,7 +507,7 @@ function ensureNode(k){
 
     // Schedule repeating waves with slight variation
     function loopWave(){
-      if(!playing)return;
+      if(!playing){setTimeout(loopWave,200);return}
       const cycle=17+Math.random()*3; // 17-20s per wave
       scheduleWave(bodyG,bodyF,foamG,0);
       setTimeout(()=>loopWave(),cycle*1000);
@@ -515,7 +515,7 @@ function ensureNode(k){
     loopWave();
     // Second wave offset for gentle overlap
     function loopWave2(){
-      if(!playing)return;
+      if(!playing){setTimeout(loopWave2,200);return}
       const cycle=18+Math.random()*3;
       scheduleWave(bodyG,bodyF,foamG,9);
       setTimeout(()=>loopWave2(),cycle*1000);
@@ -543,27 +543,38 @@ function ensureNode(k){
   }
 
   else if(k==="breath"){
-    // Breathing guide: 4s inhale, 7s hold, 8s exhale (4-7-8 pattern)
-    // Pink noise shaped by volume envelope to simulate breath sound
-    const s=new Tone.Noise("pink");
-    const bp=new Tone.Filter({frequency:800,type:"bandpass",Q:0.5});
-    const lp2=new Tone.Filter({frequency:2000,type:"lowpass"});
-    const breathG=new Tone.Gain(0);
-    s.connect(bp);bp.connect(lp2);lp2.connect(breathG);breathG.connect(g);s.start();
+    // Human-like breathing: white noise for inhale (sharper), pink for exhale (softer)
+    // Inhale layer: higher frequency, nasal quality
+    const inhale=new Tone.Noise("white");
+    const inhF=new Tone.Filter({frequency:1200,type:"bandpass",Q:1.2});
+    const inhLp=new Tone.Filter(3000,"lowpass");
+    const inhG=new Tone.Gain(0);
+    inhale.connect(inhF);inhF.connect(inhLp);inhLp.connect(inhG);inhG.connect(g);inhale.start();
+    // Exhale layer: lower, warmer, mouth-like
+    const exhale=new Tone.Noise("pink");
+    const exhF=new Tone.Filter({frequency:600,type:"bandpass",Q:0.6});
+    const exhLp=new Tone.Filter(1800,"lowpass");
+    const exhG=new Tone.Gain(0);
+    exhale.connect(exhF);exhF.connect(exhLp);exhLp.connect(exhG);exhG.connect(g);exhale.start();
 
-    // Schedule breathing cycle: inhale(4s) → hold(7s) → exhale(8s) = 19s
+    // Breathing cycle: inhale(4s) → hold(2s) → exhale(6s) → pause(2s) = 14s
     function scheduleCycle(){
-      if(!playing)return;
+      if(!playing){setTimeout(scheduleCycle,200);return}
       const now=Tone.now();
-      // Inhale: 0→4s (volume rises)
-      breathG.gain.setValueAtTime(0.01,now);
-      breathG.gain.linearRampToValueAtTime(0.3,now+4);
-      // Hold: 4→11s (volume sustains softly)
-      breathG.gain.linearRampToValueAtTime(0.15,now+11);
-      // Exhale: 11→19s (volume fades)
-      breathG.gain.linearRampToValueAtTime(0.01,now+19);
-      // Next cycle
-      setTimeout(scheduleCycle,19500);
+      // Inhale: 0→4s
+      inhG.gain.setValueAtTime(0,now);
+      inhG.gain.linearRampToValueAtTime(.45,now+1.5);
+      inhG.gain.linearRampToValueAtTime(.35,now+4);
+      inhG.gain.linearRampToValueAtTime(0,now+4.5);
+      exhG.gain.setValueAtTime(0,now);
+      // Hold: 4→6s (silence)
+      // Exhale: 6→12s
+      exhG.gain.setValueAtTime(0,now+6);
+      exhG.gain.linearRampToValueAtTime(.5,now+7);
+      exhG.gain.linearRampToValueAtTime(.3,now+10);
+      exhG.gain.linearRampToValueAtTime(0,now+12);
+      // Pause: 12→14s (silence)
+      setTimeout(scheduleCycle,14000);
     }
     scheduleCycle();
   }
