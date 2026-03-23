@@ -378,13 +378,12 @@ function ensureNode(k){
   else if(k==="stream"){
     // Real recording of a gentle stream (CC BY 4.0 — freesoundslibrary.com)
     const audio=new Audio("stream.mp3");
-    audio.loop=true;audio.volume=1;
-    // Connect to Web Audio for gain control
-    const src=Tone.context.createMediaElementSource(audio);
-    src.connect(g);
+    audio.loop=true;
+    // Use HTML audio volume directly — controlled by setVol override below
     audio.play().catch(()=>{});
-    // Store ref so we can stop it
-    nodes[k]=nodes[k]||{};nodes[k]._audio=audio;
+    // Skip normal gain node — store audio ref, setVol will control audio.volume
+    nodes[k]={g,_audio:audio,_useAudioVol:true};
+    return; // skip the nodes[k]={g} at the bottom
   }
   else if(k==="birds"){
     // Bird chirps: random sine blips at nature frequencies with reverb
@@ -534,7 +533,15 @@ function ensureNode(k){
   nodes[k]={g}
 }
 
-function setVol(k,v){vols[k]=v;if(nodes[k])nodes[k].g.gain.rampTo(v,.5)}
+function setVol(k,v){
+  vols[k]=v;
+  if(!nodes[k])return;
+  if(nodes[k]._useAudioVol&&nodes[k]._audio){
+    nodes[k]._audio.volume=Math.min(v,1);
+  } else {
+    nodes[k].g.gain.rampTo(v,.5);
+  }
+}
 function startTransport(){if(Tone.getTransport().state!=="started")Tone.getTransport().start()}
 function stopAll(){
   Object.keys(nodes).forEach(k=>{
