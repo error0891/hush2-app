@@ -206,13 +206,16 @@ const MODES=[
     sounds:[{k:"lofi",n:"Jazz chords",e:"🎹",dv:.35},{k:"perc",n:"Soft percussion",e:"🥁",dv:.12},{k:"vinyl",n:"Vinyl crackle",e:"💿",dv:.15},{k:"brown",n:"Background hum",e:"☕",dv:.15},{k:"rain",n:"Window rain",e:"🌧",dv:.1},{k:"cafe",n:"Library hum",e:"📚",dv:0}]},
   {id:"anxiety",name:"Grounding",sub:"Anchor yourself here",icon:"⊛",grad:"linear-gradient(135deg,#EBE6DC,#C8BCAA)",ac:"#A09480",tag:"Anxiety relief",
     why:"A slow heartbeat activates your vagus nerve, signaling safety. Theta-range frequencies have been shown to reduce anxiety scores by up to 64%.",
-    sounds:[{k:"heartbeat",n:"Slow heartbeat",e:"💓",dv:.25},{k:"brown",n:"Earth tone",e:"🪨",dv:.35},{k:"rain",n:"Soft rain",e:"🌧",dv:.15},{k:"bowl",n:"Singing bowl",e:"🔔",dv:.1},{k:"wind",n:"Forest breeze",e:"🍃",dv:.1},{k:"drone",n:"Grounding hum",e:"🫶",dv:0}]},
+    sounds:[{k:"heartbeat",n:"Slow heartbeat",e:"💓",dv:.25},{k:"brown",n:"Earth tone",e:"🪨",dv:.35},{k:"stream",n:"Flowing water",e:"💧",dv:.15},{k:"birds",n:"Distant birds",e:"🐦",dv:.08},{k:"wind",n:"Forest breeze",e:"🍃",dv:.1},{k:"bowl",n:"Singing bowl",e:"🔔",dv:.08}]},
   {id:"bodydouble",name:"Body double",sub:"Someone's working nearby",icon:"◇",grad:"linear-gradient(135deg,#EDE6DE,#CCB8A8)",ac:"#A89080",tag:"ADHD coworking",
     why:"ADHD brains focus better with a sense of presence nearby. Cafe ambiance at ~70dB simulates a coworking space without the social drain.",
     sounds:[{k:"cafe",n:"Cafe ambiance",e:"☕",dv:.4},{k:"perc",n:"Soft percussion",e:"🥁",dv:.1},{k:"lofi",n:"Soft beats",e:"🎹",dv:.15},{k:"vinyl",n:"Keyboard taps",e:"⌨️",dv:.12},{k:"rain",n:"Window rain",e:"🌧",dv:.08},{k:"brown",n:"Room tone",e:"🏠",dv:0}]},
   {id:"meltdown",name:"Recovery",sub:"Gently come back to yourself",icon:"◌",grad:"linear-gradient(135deg,#E4E6EC,#B8BCC8)",ac:"#8A8EA0",tag:"Meltdown recovery",
     why:"Ultra-predictable, low-variation sound helps your brain reorganize after overload. Gradual layering supports gentle sensory re-entry.",
-    sounds:[{k:"brown",n:"Deep cocoon",e:"🫧",dv:.5},{k:"drone",n:"Gentle hum",e:"🌀",dv:.2},{k:"pink",n:"Soft wash",e:"☁️",dv:.15},{k:"bowl",n:"Distant bowl",e:"🔔",dv:.1},{k:"wind",n:"Slow breeze",e:"🍃",dv:.1},{k:"heartbeat",n:"Calm pulse",e:"💓",dv:0}]}
+    sounds:[{k:"brown",n:"Deep cocoon",e:"🫧",dv:.5},{k:"drone",n:"Gentle hum",e:"🌀",dv:.2},{k:"pink",n:"Soft wash",e:"☁️",dv:.15},{k:"bowl",n:"Distant bowl",e:"🔔",dv:.1},{k:"wind",n:"Slow breeze",e:"🍃",dv:.1},{k:"heartbeat",n:"Calm pulse",e:"💓",dv:0}]},
+  {id:"tranquil",name:"Tranquil",sub:"A quiet place in nature",icon:"◠",grad:"linear-gradient(135deg,#E4EBE6,#B8CCBC)",ac:"#7A9880",tag:"Nature immersion",
+    why:"Nature sounds reduce cortisol and activate the parasympathetic nervous system. Flowing water and birdsong are among the most restorative sounds studied.",
+    sounds:[{k:"stream",n:"Running stream",e:"💧",dv:.4},{k:"birds",n:"Bird song",e:"🐦",dv:.2},{k:"wind",n:"Soft breeze",e:"🍃",dv:.15},{k:"rain",n:"Distant rain",e:"🌧",dv:0},{k:"brown",n:"Forest floor",e:"🌿",dv:.1},{k:"bowl",n:"Wind chimes",e:"🔔",dv:0}]}
 ];
 const TIMERS=[{l:"5m",m:5},{l:"15m",m:15},{l:"25m",m:25},{l:"45m",m:45},{l:"1hr",m:60},{l:"∞",m:0}];
 
@@ -263,13 +266,23 @@ function ensureNode(k){
   }
   // ── NEW SOUNDS ──
   else if(k==="rain"){
-    // Rain: pink noise through bandpass + LFO for patter variation
-    const s=new Tone.Noise("pink");
-    const bp=new Tone.Filter({frequency:3000,type:"bandpass",Q:0.3});
-    const lp2=new Tone.Filter(5000,"lowpass");
-    const lfo=new Tone.LFO({frequency:.15,min:1800,max:4500}).start();
-    lfo.connect(bp.frequency);
-    s.connect(bp);bp.connect(lp2);lp2.connect(g);s.start()
+    // Rain: layered — steady low rumble + gentle high-freq patter (no swoosh)
+    // Layer 1: deep, steady rumble (brown noise, lowpassed)
+    const rumble=new Tone.Noise("brown");
+    const rumbleLp=new Tone.Filter(250,"lowpass");
+    const rumbleG=new Tone.Gain(.35);
+    rumble.connect(rumbleLp);rumbleLp.connect(rumbleG);rumbleG.connect(g);rumble.start();
+    // Layer 2: soft patter (white noise, highpassed + lowpassed for that 2-6kHz patter band)
+    const patter=new Tone.Noise("white");
+    const hp=new Tone.Filter(2000,"highpass");
+    const lp2=new Tone.Filter(7000,"lowpass");
+    const patterG=new Tone.Gain(.12);
+    patter.connect(hp);hp.connect(lp2);lp2.connect(patterG);patterG.connect(g);patter.start();
+    // Layer 3: very subtle mid-freq wash (pink noise, gentle)
+    const mid=new Tone.Noise("pink");
+    const midBp=new Tone.Filter({frequency:1000,type:"lowpass"});
+    const midG=new Tone.Gain(.08);
+    mid.connect(midBp);midBp.connect(midG);midG.connect(g);mid.start();
   }
   else if(k==="wind"){
     // Wind: brown noise with slow LFO on filter for gusts
@@ -321,6 +334,49 @@ function ensureNode(k){
     lfo.connect(g2.gain);
     s1.connect(bp1);bp1.connect(g);s1.start();
     s2.connect(bp2);bp2.connect(g2);g2.connect(g);s2.start()
+  }
+  else if(k==="stream"){
+    // Running water/stream: brown noise shaped to sound like flowing water
+    // Layer 1: main flow — brown noise through mid bandpass with gentle LFO for ripple
+    const flow=new Tone.Noise("brown");
+    const flowBp=new Tone.Filter({frequency:900,type:"bandpass",Q:0.6});
+    const flowLfo=new Tone.LFO({frequency:.1,min:600,max:1200}).start();
+    flowLfo.connect(flowBp.frequency);
+    const flowG=new Tone.Gain(.4);
+    flow.connect(flowBp);flowBp.connect(flowG);flowG.connect(g);flow.start();
+    // Layer 2: bright trickle — white noise highpassed with faster LFO
+    const trickle=new Tone.Noise("white");
+    const tHp=new Tone.Filter(3500,"highpass");
+    const tLp=new Tone.Filter(8000,"lowpass");
+    const tLfo=new Tone.LFO({frequency:.25,min:.03,max:.1}).start();
+    const tG=new Tone.Gain(.06);
+    tLfo.connect(tG.gain);
+    trickle.connect(tHp);tHp.connect(tLp);tLp.connect(tG);tG.connect(g);trickle.start();
+    // Layer 3: deep undertone
+    const deep=new Tone.Noise("brown");
+    const deepLp=new Tone.Filter(200,"lowpass");
+    const deepG=new Tone.Gain(.2);
+    deep.connect(deepLp);deepLp.connect(deepG);deepG.connect(g);deep.start();
+  }
+  else if(k==="birds"){
+    // Bird chirps: random sine blips at nature frequencies with reverb
+    const rv=new Tone.Reverb({decay:3,wet:.5});rv.connect(g);
+    // Multiple "bird" voices using short sine chirps at random intervals
+    const birdFreqs=[[2200,2800],[1800,2400],[3000,3600],[1500,2000]];
+    birdFreqs.forEach((range,idx)=>{
+      const sy=new Tone.Synth({oscillator:{type:"sine"},envelope:{attack:.01,decay:.08,sustain:.02,release:.15},volume:-16-idx*2});
+      sy.connect(rv);
+      // Each bird chirps at a slightly different rate with randomization
+      const baseInterval=3+idx*1.5;
+      const lp=new Tone.Loop(t=>{
+        const freq=range[0]+Math.random()*(range[1]-range[0]);
+        sy.triggerAttackRelease(freq,.06+Math.random()*.04,t);
+        // Sometimes do a double chirp
+        if(Math.random()>.5)sy.triggerAttackRelease(freq*1.05,.04,t+.12);
+        if(Math.random()>.7)sy.triggerAttackRelease(freq*.95,.05,t+.25);
+      },baseInterval+Math.random());
+      lp.start(idx*.8+Math.random()*2);
+    });
   }
   else if(k==="perc"){
     // Soft percussion: muted kick + gentle shaker at slow tempo
