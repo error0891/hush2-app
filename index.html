@@ -376,27 +376,27 @@ function ensureNode(k){
     s2.connect(bp2);bp2.connect(g2);g2.connect(g);s2.start()
   }
   else if(k==="stream"){
-    // Running water/stream: brown noise shaped to sound like flowing water
-    // Layer 1: main flow — brown noise through mid bandpass with gentle LFO for ripple
-    const flow=new Tone.Noise("brown");
-    const flowBp=new Tone.Filter({frequency:900,type:"bandpass",Q:0.6});
-    const flowLfo=new Tone.LFO({frequency:.1,min:600,max:1200}).start();
-    flowLfo.connect(flowBp.frequency);
-    const flowG=new Tone.Gain(.4);
-    flow.connect(flowBp);flowBp.connect(flowG);flowG.connect(g);flow.start();
-    // Layer 2: bright trickle — white noise highpassed with faster LFO
-    const trickle=new Tone.Noise("white");
-    const tHp=new Tone.Filter(3500,"highpass");
-    const tLp=new Tone.Filter(8000,"lowpass");
-    const tLfo=new Tone.LFO({frequency:.25,min:.03,max:.1}).start();
-    const tG=new Tone.Gain(.06);
-    tLfo.connect(tG.gain);
-    trickle.connect(tHp);tHp.connect(tLp);tLp.connect(tG);tG.connect(g);trickle.start();
-    // Layer 3: deep undertone
-    const deep=new Tone.Noise("brown");
-    const deepLp=new Tone.Filter(200,"lowpass");
-    const deepG=new Tone.Gain(.2);
-    deep.connect(deepLp);deepLp.connect(deepG);deepG.connect(g);deep.start();
+    // Gentle small stream: high trickle-focused, minimal bass, babbling brook feel
+    // Layer 1: gentle babble — pink noise through narrow mid-high band with fast fluttery LFO
+    const babble=new Tone.Noise("pink");
+    const babbleBp=new Tone.Filter({frequency:2500,type:"bandpass",Q:1.2});
+    const babbleLfo=new Tone.LFO({frequency:.4,min:1800,max:3200}).start();
+    babbleLfo.connect(babbleBp.frequency);
+    const babbleG=new Tone.Gain(.25);
+    babble.connect(babbleBp);babbleBp.connect(babbleG);babbleG.connect(g);babble.start();
+    // Layer 2: bright sparkle — white noise, high frequency trickle drops
+    const sparkle=new Tone.Noise("white");
+    const spHp=new Tone.Filter(4500,"highpass");
+    const spLp=new Tone.Filter(9000,"lowpass");
+    const spLfo=new Tone.LFO({frequency:.6,min:.02,max:.1}).start();
+    const spG=new Tone.Gain(.04);
+    spLfo.connect(spG.gain);
+    sparkle.connect(spHp);spHp.connect(spLp);spLp.connect(spG);spG.connect(g);sparkle.start();
+    // Layer 3: very soft low murmur — just a hint of body, not beachy
+    const murmur=new Tone.Noise("brown");
+    const murmurLp=new Tone.Filter(300,"lowpass");
+    const murmurG=new Tone.Gain(.08);
+    murmur.connect(murmurLp);murmurLp.connect(murmurG);murmurG.connect(g);murmur.start();
   }
   else if(k==="birds"){
     // Bird chirps: random sine blips at nature frequencies with reverb
@@ -452,34 +452,45 @@ function ensureNode(k){
   }
 
   else if(k==="waves"){
-    // Ocean waves: layered noise with slow LFO for rolling surf
-    // Layer 1: the surge — brown noise with slow volume swell
-    const surge=new Tone.Noise("brown");
-    const surgeLp=new Tone.Filter(500,"lowpass");
-    const surgeG=new Tone.Gain(0);
-    const surgeLfo=new Tone.LFO({frequency:.08,min:.1,max:.5,type:"sine"}).start();
-    surgeLfo.connect(surgeG.gain);
-    surge.connect(surgeLp);surgeLp.connect(surgeG);surgeG.connect(g);surge.start();
-    // Layer 2: the wash/foam — white noise highpassed, swells with surge but slightly delayed
+    // Ocean waves: dramatic crashing surf with strong build→crash→recede cycle
+    // Layer 1: the crash — wide-band noise with sharp sawtooth-like LFO (fast rise, slow fall)
+    const crash=new Tone.Noise("brown");
+    const crashBp=new Tone.Filter({frequency:800,type:"lowpass"});
+    const crashLfo=new Tone.LFO({frequency:.07,min:200,max:1400,type:"sawtooth"}).start();
+    crashLfo.connect(crashBp.frequency);
+    const crashG=new Tone.Gain(0);
+    const crashVol=new Tone.LFO({frequency:.07,min:.15,max:.6,type:"sawtooth"}).start();
+    crashVol.connect(crashG.gain);
+    crash.connect(crashBp);crashBp.connect(crashG);crashG.connect(g);crash.start();
+    // Layer 2: foam/spray — white noise burst at the crash peak, high-freq
     const foam=new Tone.Noise("white");
-    const foamHp=new Tone.Filter(2000,"highpass");
-    const foamLp=new Tone.Filter(6000,"lowpass");
+    const foamHp=new Tone.Filter(1500,"highpass");
+    const foamLp=new Tone.Filter(8000,"lowpass");
     const foamG=new Tone.Gain(0);
-    const foamLfo=new Tone.LFO({frequency:.08,min:0,max:.15,type:"sine",phase:40}).start();
+    const foamLfo=new Tone.LFO({frequency:.07,min:0,max:.25,type:"sawtooth",phase:20}).start();
     foamLfo.connect(foamG.gain);
     foam.connect(foamHp);foamHp.connect(foamLp);foamLp.connect(foamG);foamG.connect(g);foam.start();
-    // Layer 3: deep undertow rumble — constant low presence
-    const deep=new Tone.Noise("brown");
-    const deepLp=new Tone.Filter(150,"lowpass");
-    const deepG=new Tone.Gain(.2);
-    deep.connect(deepLp);deepLp.connect(deepG);deepG.connect(g);deep.start();
-    // Layer 4: second wave at different frequency for natural overlap
-    const surge2=new Tone.Noise("brown");
-    const surge2Bp=new Tone.Filter({frequency:350,type:"lowpass"});
-    const surge2G=new Tone.Gain(0);
-    const surge2Lfo=new Tone.LFO({frequency:.055,min:.05,max:.35,type:"sine",phase:120}).start();
-    surge2Lfo.connect(surge2G.gain);
-    surge2.connect(surge2Bp);surge2Bp.connect(surge2G);surge2G.connect(g);surge2.start();
+    // Layer 3: deep boom on impact — heavy low-end thump
+    const boom=new Tone.Noise("brown");
+    const boomLp=new Tone.Filter(100,"lowpass");
+    const boomG=new Tone.Gain(0);
+    const boomLfo=new Tone.LFO({frequency:.07,min:.05,max:.4,type:"sawtooth",phase:10}).start();
+    boomLfo.connect(boomG.gain);
+    boom.connect(boomLp);boomLp.connect(boomG);boomG.connect(g);boom.start();
+    // Layer 4: constant undertow — always present between waves
+    const undertow=new Tone.Noise("brown");
+    const underLp=new Tone.Filter(200,"lowpass");
+    const underG=new Tone.Gain(.15);
+    undertow.connect(underLp);underLp.connect(underG);underG.connect(g);undertow.start();
+    // Layer 5: second wave offset — different timing for natural irregularity
+    const crash2=new Tone.Noise("brown");
+    const crash2Lp=new Tone.Filter({frequency:600,type:"lowpass"});
+    const crash2Lfo=new Tone.LFO({frequency:.05,min:150,max:1000,type:"sawtooth",phase:180}).start();
+    crash2Lfo.connect(crash2Lp.frequency);
+    const crash2G=new Tone.Gain(0);
+    const crash2Vol=new Tone.LFO({frequency:.05,min:.08,max:.4,type:"sawtooth",phase:180}).start();
+    crash2Vol.connect(crash2G.gain);
+    crash2.connect(crash2Lp);crash2Lp.connect(crash2G);crash2G.connect(g);crash2.start();
   }
   else if(k==="seagull"){
     // Distant seagull calls — sparse, airy sine chirps with long reverb
