@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html><head><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>body{background:#1a1520;color:#fff;font-family:system-ui;padding:40px;text-align:center}
+button{background:#9B7FD4;color:#fff;border:none;padding:16px 32px;border-radius:12px;font-size:18px;margin:10px;cursor:pointer}
+#log{font-size:12px;color:rgba(255,255,255,.5);margin-top:20px;text-align:left;font-family:monospace;white-space:pre-wrap}</style></head>
+<body>
+<h2>iOS Audio Test</h2>
+<p style="color:rgba(255,255,255,.5)">Tap each button and report which ones produce sound</p>
+
+<button onclick="test1()">Test 1: Simple Oscillator</button><br>
+<button onclick="test2()">Test 2: Noise Buffer</button><br>
+<button onclick="test3()">Test 3: HTML Audio Element</button><br>
+<button onclick="test4()">Test 4: Oscillator via fresh context</button>
+
+<div id="log"></div>
+
+<script>
+function log(msg){document.getElementById('log').textContent+=msg+'\n'}
+let ctx;
+
+// Test 1: Basic oscillator on shared context
+function test1(){
+  if(!ctx)ctx=new (window.AudioContext||window.webkitAudioContext)();
+  ctx.resume().then(()=>{
+    log('Test1: ctx.state='+ctx.state);
+    const o=ctx.createOscillator();o.type='sine';o.frequency.value=440;
+    const g=ctx.createGain();g.gain.value=0.3;
+    o.connect(g);g.connect(ctx.destination);
+    o.start();setTimeout(()=>{o.stop();log('Test1: stopped')},2000);
+    log('Test1: oscillator started');
+  });
+}
+
+// Test 2: Buffer source with generated noise
+function test2(){
+  if(!ctx)ctx=new (window.AudioContext||window.webkitAudioContext)();
+  ctx.resume().then(()=>{
+    log('Test2: ctx.state='+ctx.state);
+    const buf=ctx.createBuffer(1,ctx.sampleRate*2,ctx.sampleRate);
+    const d=buf.getChannelData(0);
+    for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+    const src=ctx.createBufferSource();src.buffer=buf;
+    const g=ctx.createGain();g.gain.value=0.3;
+    src.connect(g);g.connect(ctx.destination);src.start();
+    log('Test2: noise buffer started');
+  });
+}
+
+// Test 3: HTML Audio element with data URI (tiny beep)
+function test3(){
+  log('Test3: creating audio element...');
+  // Generate a tiny WAV beep
+  const sr=44100,dur=1,len=sr*dur;
+  const ab=new ArrayBuffer(44+len*2);
+  const v=new DataView(ab);
+  function ws(o,s){for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i))}
+  ws(0,'RIFF');v.setUint32(4,36+len*2,true);ws(8,'WAVE');ws(12,'fmt ');
+  v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);
+  v.setUint32(24,sr,true);v.setUint32(28,sr*2,true);v.setUint16(32,2,true);
+  v.setUint16(34,16,true);ws(36,'data');v.setUint32(40,len*2,true);
+  for(let i=0;i<len;i++){const s=Math.sin(2*Math.PI*440*i/sr)*0.3;v.setInt16(44+i*2,s*32767,true)}
+  const blob=new Blob([ab],{type:'audio/wav'});
+  const url=URL.createObjectURL(blob);
+  const audio=new Audio(url);
+  audio.play().then(()=>log('Test3: playing!')).catch(e=>log('Test3 error: '+e.message));
+}
+
+// Test 4: Brand new context created inside the click handler
+function test4(){
+  const freshCtx=new (window.AudioContext||window.webkitAudioContext)();
+  log('Test4: fresh ctx.state='+freshCtx.state);
+  freshCtx.resume().then(()=>{
+    log('Test4: after resume, state='+freshCtx.state);
+    const o=freshCtx.createOscillator();o.type='sine';o.frequency.value=660;
+    const g=freshCtx.createGain();g.gain.value=0.3;
+    o.connect(g);g.connect(freshCtx.destination);
+    o.start();setTimeout(()=>{o.stop();freshCtx.close();log('Test4: stopped')},2000);
+    log('Test4: oscillator started');
+  });
+}
+</script></body></html>
