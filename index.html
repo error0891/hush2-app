@@ -394,27 +394,25 @@ function ensureNode(k){
     s2.connect(bp2);bp2.connect(g2);g2.connect(g);s2.start()
   }
   else if(k==="stream"){
-    // Synthesized gentle stream: high-pitched narrow trickle, not broad wash
-    // Layer 1: tight high trickle (the main character)
-    const s1=new Tone.Noise("white");
-    const bp1=new Tone.Filter({frequency:4500,type:"bandpass",Q:3});
-    const g1=new Tone.Gain(.25);
-    // Subtle modulation for organic feel
-    const lfo1=new Tone.LFO({frequency:.15,min:.12,max:.3,type:"sine"}).start();
-    lfo1.connect(g1.gain);
-    s1.connect(bp1);bp1.connect(g1);g1.connect(g);s1.start();
-    // Layer 2: slightly lower mid-trickle for body
-    const s2=new Tone.Noise("pink");
-    const bp2=new Tone.Filter({frequency:2800,type:"bandpass",Q:2});
-    const g2=new Tone.Gain(.1);
-    const lfo2=new Tone.LFO({frequency:.08,min:.05,max:.15,type:"sine"}).start();
-    lfo2.connect(g2.gain);
-    s2.connect(bp2);bp2.connect(g2);g2.connect(g);s2.start();
-    // Layer 3: very faint low warmth (stream bed)
-    const s3=new Tone.Noise("brown");
-    const lp3=new Tone.Filter(300,"lowpass");
-    const g3=new Tone.Gain(.04);
-    s3.connect(lp3);lp3.connect(g3);g3.connect(g);s3.start();
+    // Real recording of a gentle stream
+    const audio=new Audio();
+    audio.crossOrigin="anonymous";
+    audio.preload="auto";
+    audio.loop=true;
+    audio.src="stream.mp3";
+    audio.volume=Math.min((vols[k]||0)*0.25,1);
+    function tryPlay(){
+      const p=audio.play();
+      if(p)p.catch(e=>{
+        const retry=()=>{audio.play().catch(()=>{});document.removeEventListener("touchend",retry);document.removeEventListener("click",retry)};
+        document.addEventListener("touchend",retry,{once:true});
+        document.addEventListener("click",retry,{once:true});
+      });
+    }
+    audio.addEventListener("canplaythrough",tryPlay,{once:true});
+    if(audio.readyState>=3)tryPlay();
+    nodes[k]={g,_audio:audio,_useAudioVol:true};
+    return;
   }
   else if(k==="birds"){
     // Bird chirps: random sine blips at nature frequencies with reverb
@@ -576,7 +574,11 @@ function ensureNode(k){
 function setVol(k,v){
   vols[k]=v;
   if(!nodes[k])return;
-  nodes[k].g.gain.rampTo(v,.5);
+  if(nodes[k]._useAudioVol&&nodes[k]._audio){
+    nodes[k]._audio.volume=Math.min(v*0.25,1);
+  } else {
+    nodes[k].g.gain.rampTo(v,.5);
+  }
 }
 function startTransport(){if(Tone.getTransport().state!=="started")Tone.getTransport().start()}
 function stopAll(){
@@ -703,6 +705,7 @@ function enterPlayer(){
   nodes={};
   Object.keys(oldNodes).forEach(k=>{
     try{oldNodes[k].g.gain.rampTo(0,.05)}catch(e){}
+    if(oldNodes[k]._audio){try{oldNodes[k]._audio.pause();oldNodes[k]._audio.src=''}catch(e){}}
     try{oldNodes[k].g.disconnect()}catch(e){}
   });
   m.sounds.forEach(s=>{vols[s.k]=s.dv});
