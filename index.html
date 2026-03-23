@@ -215,7 +215,7 @@ const MODES=[
     sounds:[{k:"heartbeat",n:"Slow heartbeat",e:"💓",dv:.25},{k:"brown",n:"Earth tone",e:"🪨",dv:.35},{k:"stream",n:"Flowing water",e:"💧",dv:.15},{k:"birds",n:"Distant birds",e:"🐦",dv:.08},{k:"wind",n:"Forest breeze",e:"🍃",dv:.1},{k:"bowl",n:"Singing bowl",e:"🔔",dv:.08}]},
   {id:"meditate",name:"Meditate",sub:"Still the mind, find the center",icon:"◎",grad:"linear-gradient(135deg,#E6E0D6,#C8BAA8)",ac:"#9E8E78",tag:"Mindfulness",pro:1,
     why:"Singing bowls at specific frequencies entrain brainwaves toward alpha and theta states. Combined with flowing water, they create an ideal anchor for meditation practice.",
-    sounds:[{k:"bowl",n:"Temple gong",e:"🔔",dv:.2},{k:"breath",n:"Breathing guide",e:"🫁",dv:.2},{k:"drone",n:"Om drone",e:"🕉",dv:.12},{k:"brown",n:"Stillness",e:"🪨",dv:.1},{k:"stream",n:"Flowing water",e:"💧",dv:.02},{k:"pink",n:"Soft silence",e:"☁️",dv:0}]},
+    sounds:[{k:"gong",n:"Temple gong",e:"🔔",dv:.2},{k:"drone",n:"Om drone",e:"🕉",dv:.12},{k:"brown",n:"Stillness",e:"🪨",dv:.1},{k:"stream",n:"Flowing water",e:"💧",dv:.02},{k:"wind",n:"Cave air",e:"🍃",dv:.06},{k:"pink",n:"Soft silence",e:"☁️",dv:0}]},
   {id:"meltdown",name:"Recovery",sub:"Gently come back to yourself",icon:"◌",grad:"linear-gradient(135deg,#E4E6EC,#B8BCC8)",ac:"#8A8EA0",tag:"Meltdown recovery",pro:1,
     why:"Ultra-predictable, low-variation sound helps your brain reorganize after overload. Gradual layering supports gentle sensory re-entry.",
     sounds:[{k:"brown",n:"Deep cocoon",e:"🫧",dv:.5},{k:"drone",n:"Gentle hum",e:"🌀",dv:.2},{k:"pink",n:"Soft wash",e:"☁️",dv:.15},{k:"bowl",n:"Distant bowl",e:"🔔",dv:.1},{k:"wind",n:"Slow breeze",e:"🍃",dv:.1},{k:"heartbeat",n:"Calm pulse",e:"💓",dv:0}]},
@@ -374,12 +374,34 @@ function ensureNode(k){
     const rv=new Tone.Reverb({decay:12,wet:.8});rv.connect(g);
     const sy=new Tone.Synth({oscillator:{type:"sine"},envelope:{attack:2,decay:4,sustain:.3,release:6},volume:-10});
     sy.connect(rv);
-    // Ring every ~8 seconds with slight pitch variation
     const notes=["G4","B4","D5","G5"];let ni=0;
-    const lp2=new Tone.Loop(t=>{sy.triggerAttackRelease(notes[ni%4],"4n",t);ni++},"8n");
-    // Slow loop: one strike every 8 seconds
     const lp3=new Tone.Loop(t=>{sy.triggerAttackRelease(notes[ni%4],3,t);ni++},8);
     lp3.start(0)
+  }
+  else if(k==="gong"){
+    // Deep temple gong: low fundamental + harmonics, massive stone-hall reverb
+    // Long decay reverb simulating a cave/stone meditation hall
+    const rv=new Tone.Reverb({decay:18,wet:.85});rv.connect(g);
+    const lp=new Tone.Filter(800,"lowpass");lp.connect(rv);
+    // Fundamental: deep C2 (65Hz) — the low boom
+    const sy1=new Tone.Synth({oscillator:{type:"sine"},envelope:{attack:.01,decay:8,sustain:0,release:10},volume:-8});
+    sy1.connect(lp);
+    // Harmonic 1: muted fifth (G2) for richness
+    const sy2=new Tone.Synth({oscillator:{type:"sine"},envelope:{attack:.01,decay:6,sustain:0,release:8},volume:-14});
+    sy2.connect(lp);
+    // Harmonic 2: subtle octave (C3) — distant shimmer
+    const sy3=new Tone.Synth({oscillator:{type:"triangle"},envelope:{attack:.01,decay:4,sustain:0,release:6},volume:-20});
+    sy3.connect(lp);
+    // Strike every 15-20s — sparse, contemplative
+    function strike(){
+      if(!playing){setTimeout(strike,200);return}
+      const t=Tone.now();
+      sy1.triggerAttackRelease("C2",6,t);
+      sy2.triggerAttackRelease("G2",5,t+.02);
+      sy3.triggerAttackRelease("C3",3,t+.05);
+      setTimeout(strike,15000+Math.random()*5000);
+    }
+    strike();
   }
   else if(k==="cafe"){
     // Cafe: layered filtered noises for ambient chatter + clinks
@@ -544,42 +566,6 @@ function ensureNode(k){
     });
   }
 
-  else if(k==="breath"){
-    // Human-like breathing: white noise for inhale (sharper), pink for exhale (softer)
-    // Inhale layer: higher frequency, nasal quality
-    const inhale=new Tone.Noise("white");
-    const inhF=new Tone.Filter({frequency:1200,type:"bandpass",Q:1.2});
-    const inhLp=new Tone.Filter(3000,"lowpass");
-    const inhG=new Tone.Gain(0);
-    inhale.connect(inhF);inhF.connect(inhLp);inhLp.connect(inhG);inhG.connect(g);inhale.start();
-    // Exhale layer: lower, warmer, mouth-like
-    const exhale=new Tone.Noise("pink");
-    const exhF=new Tone.Filter({frequency:600,type:"bandpass",Q:0.6});
-    const exhLp=new Tone.Filter(1800,"lowpass");
-    const exhG=new Tone.Gain(0);
-    exhale.connect(exhF);exhF.connect(exhLp);exhLp.connect(exhG);exhG.connect(g);exhale.start();
-
-    // Breathing cycle: inhale(4s) → hold(2s) → exhale(6s) → pause(2s) = 14s
-    function scheduleCycle(){
-      if(!playing){setTimeout(scheduleCycle,200);return}
-      const now=Tone.now();
-      // Inhale: 0→4s
-      inhG.gain.setValueAtTime(0,now);
-      inhG.gain.linearRampToValueAtTime(.45,now+1.5);
-      inhG.gain.linearRampToValueAtTime(.35,now+4);
-      inhG.gain.linearRampToValueAtTime(0,now+4.5);
-      exhG.gain.setValueAtTime(0,now);
-      // Hold: 4→6s (silence)
-      // Exhale: 6→12s
-      exhG.gain.setValueAtTime(0,now+6);
-      exhG.gain.linearRampToValueAtTime(.5,now+7);
-      exhG.gain.linearRampToValueAtTime(.3,now+10);
-      exhG.gain.linearRampToValueAtTime(0,now+12);
-      // Pause: 12→14s (silence)
-      setTimeout(scheduleCycle,14000);
-    }
-    scheduleCycle();
-  }
 
   nodes[k]={g}
 }
