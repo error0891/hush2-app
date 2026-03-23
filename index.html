@@ -325,15 +325,8 @@ function ensureNode(k){
     mid.connect(midBp);midBp.connect(midG);midG.connect(g);mid.start();
   }
   else if(k==="wind"){
-    // Natural sea breeze: layered noise at different bands with irregular LFOs
-    // Layer 1: low rumble (distant wind)
-    const lo=new Tone.Noise("brown");
-    const loF=new Tone.Filter({frequency:250,type:"lowpass"});
-    const loG=new Tone.Gain(.5);
-    const loLfo=new Tone.LFO({frequency:.03,min:.2,max:.6,type:"sine"}).start();
-    loLfo.connect(loG.gain);
-    lo.connect(loF);loF.connect(loG);loG.connect(g);lo.start();
-    // Layer 2: mid whoosh (main body) with slow irregular sweep
+    // Natural sea breeze: mid + high layers only (no low rumble to avoid hum)
+    // Layer 1: mid whoosh (main body) with slow irregular sweep
     const mid=new Tone.Noise("pink");
     const midF=new Tone.Filter({frequency:800,type:"bandpass",Q:0.4});
     const midG=new Tone.Gain(.25);
@@ -483,12 +476,6 @@ function ensureNode(k){
     const foamLp=new Tone.Filter(4000,"lowpass");
     const foamG=new Tone.Gain(0);
     foam.connect(foamBp);foamBp.connect(foamLp);foamLp.connect(foamG);foamG.connect(g);foam.start();
-    // Layer 3: constant undertow (always present, warm bed)
-    const under=new Tone.Noise("brown");
-    const underLp=new Tone.Filter(200,"lowpass");
-    const underG=new Tone.Gain(.12);
-    under.connect(underLp);underLp.connect(underG);underG.connect(g);under.start();
-
     // Wave cycle: gentle roll with narrow volume range (.15 → .25 peak, not .1 → .4)
     // build(6s) → soft crest(2s) → flow(3s) → retreat(7s) ≈ 18s
     function scheduleWave(bodyGn,bodyFl,foamGn,delay){
