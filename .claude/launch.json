@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "hush-dev",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8080", "--directory", "/Users/jitenvyakarnam/Downloads/hush2-app"],
+      "port": 8080
+    }
+  ]
+}
