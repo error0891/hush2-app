@@ -15,23 +15,14 @@
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overflow-x:hidden}
 body{font-family:'DM Sans',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;background:linear-gradient(160deg,#1a1520,#1e1528 30%,#1a1225 60%,#151018);color:#F5F0EB;min-height:100vh;min-height:100dvh;-webkit-font-smoothing:antialiased;transition:background .5s,color .5s}
-body.light{background:linear-gradient(160deg,#FAF8F5,#F2EDE8 30%,#F5F0EB 60%,#EDE8E2);color:#2A2530}
-body.light .blob{opacity:.15;filter:blur(80px)}
-body.light .mode-card{border-color:rgba(0,0,0,.06)}
-body.light .snd-row{border-color:rgba(0,0,0,.06);background:rgba(255,255,255,.5)}
-body.light .timer-btn{border-color:rgba(0,0,0,.08);background:rgba(255,255,255,.4);color:rgba(42,37,48,.4)}
-body.light .tag{font-weight:600}
-body.light input[type=range]{background:rgba(0,0,0,.08)}
-body.light input[type=range]::-webkit-slider-thumb{background:#2A2530;box-shadow:0 1px 4px rgba(0,0,0,.15)}
-body.light .feedback-bar{background:linear-gradient(to top,rgba(250,248,245,.98),rgba(250,248,245,.9));border-top-color:rgba(0,0,0,.08)}
-body.light .scroll-area::-webkit-scrollbar{display:none}
+body.light .mode-card{backdrop-filter:none;-webkit-backdrop-filter:none}
 .brand{font-family:Georgia,'Times New Roman',serif;font-weight:300}
 h1,h2{font-weight:300;letter-spacing:.03em}
 h1{font-size:24px}
 .brand{font-weight:200;letter-spacing:.12em}
 .screen{display:none;min-height:100vh;min-height:100dvh;position:relative;overflow:hidden;flex-direction:column;max-width:430px;margin:0 auto;width:100%}
 .screen.active{display:flex}
-@media(min-width:500px){body{background:#0d0b12}body.light{background:#EDE8E2}.screen{border-left:1px solid rgba(255,255,255,.03);border-right:1px solid rgba(255,255,255,.03);box-shadow:0 0 80px rgba(152,144,176,.04)}body.light .screen{border-color:rgba(0,0,0,.05);box-shadow:0 0 60px rgba(0,0,0,.06)}}
+@media(min-width:500px){body{background:#0d0b12}.screen{border-left:1px solid rgba(255,255,255,.03);border-right:1px solid rgba(255,255,255,.03);box-shadow:0 0 80px rgba(152,144,176,.04)}}
 .blob{position:absolute;border-radius:50%;filter:blur(70px);opacity:.25;pointer-events:none;animation:bF 8s ease-in-out infinite alternate}
 @keyframes bF{0%{transform:translate(0,0) scale(1)}100%{transform:translate(20px,-20px) scale(1.1)}}
 @keyframes fU{0%{opacity:0;transform:translateY(16px)}100%{opacity:1;transform:translateY(0)}}
@@ -597,15 +588,10 @@ function applyTheme(){
   const btn=document.getElementById('themeToggle');
   if(btn){
     btn.textContent=isLight?'☾':'☀';
-    btn.style.background=isLight?'rgba(0,0,0,.05)':'rgba(255,255,255,.06)';
-    btn.style.borderColor=isLight?'rgba(0,0,0,.1)':'rgba(255,255,255,.08)';
-    btn.style.color=isLight?'rgba(42,37,48,.5)':'rgba(245,240,235,.5)';
+    btn.style.background='rgba(255,255,255,.06)';
+    btn.style.borderColor='rgba(255,255,255,.08)';
+    btn.style.color='rgba(245,240,235,.5)';
   }
-  // Update greeting color
-  const gr=document.getElementById('greeting');
-  if(gr)gr.style.color=isLight?'rgba(42,37,48,.4)':'rgba(245,240,235,.35)';
-  // Update theme-color meta
-  document.querySelector('meta[name="theme-color"]').content=isLight?'#FAF8F5':'#1a1520';
 }
 function toggleTheme(){
   isLight=!isLight;
@@ -620,10 +606,10 @@ function buildHome(){
     const d=document.createElement('div');d.className='mode-card';
     d.style.background=isLight?m.grad:`linear-gradient(135deg,${m.ac}12,${m.ac}08)`;
     d.style.animation=`sU .5s ease-out ${.08+i*.06}s both`;
-    d.innerHTML=`<div class="tag" style="color:${m.ac};background:${m.ac}${isLight?'20':'12'};align-self:flex-start;margin-bottom:8px">${m.tag}</div>
+    d.innerHTML=`<div class="tag" style="color:${m.ac};background:${m.ac}${isLight?'22':'12'};align-self:flex-start;margin-bottom:8px">${m.tag}</div>
       <div style="font-size:15px;font-weight:500;color:${m.ac}">${m.name.toLowerCase()}</div>
-      <div style="font-size:10px;color:${m.ac}${isLight?'':'70'};margin-top:3px;line-height:1.3;font-style:italic">${m.sub}</div>
-      <div style="position:absolute;right:12px;bottom:10px;font-size:24px;color:${m.ac}${isLight?'30':'15'}">${m.icon}</div>
+      <div style="font-size:10px;color:${m.ac}${isLight?'CC':'70'};margin-top:3px;line-height:1.3;font-style:italic">${m.sub}</div>
+      <div style="position:absolute;right:12px;bottom:10px;font-size:24px;color:${m.ac}${isLight?'40':'15'}">${m.icon}</div>
       ${m.pro&&!isPro?`<div style="position:absolute;top:10px;right:10px;font-size:8px;color:${m.ac};background:${m.ac}18;padding:2px 6px;border-radius:4px;font-family:system-ui;font-weight:600;display:flex;align-items:center;gap:3px"><span style="font-size:9px">🔒</span> PRO</div>`:''}`;
     d.onclick=()=>openMode(i);g.appendChild(d)
   })
