@@ -308,7 +308,7 @@ function ensureNode(k){
     keysLoop.start(0);
   }
   else if(k==="vinyl"){
-    const s=new Tone.Noise("white");const f=new Tone.Filter({frequency:800,type:"bandpass",Q:.5});s.connect(f);f.connect(g);s.start()
+    const s=new Tone.Noise("pink");const f=new Tone.Filter({frequency:600,type:"lowpass"});s.connect(f);f.connect(g);s.start()
   }
   // ── NEW SOUNDS ──
   else if(k==="rain"){
@@ -338,15 +338,15 @@ function ensureNode(k){
     const midG=new Tone.Gain(.25);
     const midLfo=new Tone.LFO({frequency:.05,min:400,max:1400,type:"sine"}).start();
     midLfo.connect(midF.frequency);
-    const midVol=new Tone.LFO({frequency:.07,min:.1,max:.35,type:"sine"}).start();
+    const midVol=new Tone.LFO({frequency:.07,min:.18,max:.3,type:"sine"}).start();
     midVol.connect(midG.gain);
     mid.connect(midF);midF.connect(midG);midG.connect(g);mid.start();
     // Layer 3: gentle high air (rustling leaves texture)
-    const hi=new Tone.Noise("white");
+    const hi=new Tone.Noise("pink");
     const hiF=new Tone.Filter({frequency:3000,type:"highpass"});
-    const hiLp=new Tone.Filter({frequency:6000,type:"lowpass"});
-    const hiG=new Tone.Gain(.04);
-    const hiLfo=new Tone.LFO({frequency:.02,min:.01,max:.06,type:"sine"}).start();
+    const hiLp=new Tone.Filter({frequency:5000,type:"lowpass"});
+    const hiG=new Tone.Gain(.03);
+    const hiLfo=new Tone.LFO({frequency:.025,min:.02,max:.04,type:"sine"}).start();
     hiLfo.connect(hiG.gain);
     hi.connect(hiF);hiF.connect(hiLp);hiLp.connect(hiG);hiG.connect(g);hi.start()
   }
@@ -362,9 +362,8 @@ function ensureNode(k){
     const s=new Tone.Noise("white");
     const bp=new Tone.Filter({frequency:2500,type:"bandpass",Q:2});
     const ag=new Tone.Gain(0);
-    const lfo=new Tone.LFO({frequency:6,min:0,max:.8,type:"square"}).start();
-    // Random modulation for crackle effect
-    const lfo2=new Tone.LFO({frequency:.5,min:3,max:12}).start();
+    const lfo=new Tone.LFO({frequency:4,min:.05,max:.35,type:"sine"}).start();
+    const lfo2=new Tone.LFO({frequency:.3,min:2,max:6}).start();
     lfo2.connect(lfo.frequency);
     lfo.connect(ag.gain);
     s.connect(bp);bp.connect(ag);ag.connect(g);s.start()
@@ -492,59 +491,50 @@ function ensureNode(k){
   }
 
   else if(k==="waves"){
-    // Ocean waves: gentle rolling — narrow dynamic range, no harsh peaks
-    // Layer 1: main wave body (brown, soft lowpass)
-    const body=new Tone.Noise("brown");
-    const bodyF=new Tone.Filter(400,"lowpass");
-    const bodyG=new Tone.Gain(.15);
-    body.connect(bodyF);bodyF.connect(bodyG);bodyG.connect(g);body.start();
-    // Layer 2: soft foam (pink noise, gentle — no white noise harshness)
-    const foam=new Tone.Noise("pink");
-    const foamBp=new Tone.Filter({frequency:2000,type:"bandpass",Q:0.3});
-    const foamLp=new Tone.Filter(4000,"lowpass");
-    const foamG=new Tone.Gain(0);
-    foam.connect(foamBp);foamBp.connect(foamLp);foamLp.connect(foamG);foamG.connect(g);foam.start();
-    // Wave cycle: gentle roll with narrow volume range (.15 → .25 peak, not .1 → .4)
-    // build(6s) → soft crest(2s) → flow(3s) → retreat(7s) ≈ 18s
-    function scheduleWave(bodyGn,bodyFl,foamGn,delay){
+    // Ocean waves: smooth, continuous — two independent wave layers that overlap
+    // Wave A: main body
+    const bodyA=new Tone.Noise("brown");
+    const bodyAF=new Tone.Filter(400,"lowpass");
+    const bodyAG=new Tone.Gain(.17);
+    bodyA.connect(bodyAF);bodyAF.connect(bodyAG);bodyAG.connect(g);bodyA.start();
+    // Wave A: foam
+    const foamA=new Tone.Noise("pink");
+    const foamABp=new Tone.Filter({frequency:2000,type:"bandpass",Q:0.3});
+    const foamALp=new Tone.Filter(4000,"lowpass");
+    const foamAG=new Tone.Gain(0);
+    foamA.connect(foamABp);foamABp.connect(foamALp);foamALp.connect(foamAG);foamAG.connect(g);foamA.start();
+    // Wave B: offset body (separate nodes — no fighting)
+    const bodyB=new Tone.Noise("brown");
+    const bodyBF=new Tone.Filter(400,"lowpass");
+    const bodyBG=new Tone.Gain(.17);
+    bodyB.connect(bodyBF);bodyBF.connect(bodyBG);bodyBG.connect(g);bodyB.start();
+    const foamB=new Tone.Noise("pink");
+    const foamBBp=new Tone.Filter({frequency:2000,type:"bandpass",Q:0.3});
+    const foamBLp=new Tone.Filter(4000,"lowpass");
+    const foamBG=new Tone.Gain(0);
+    foamB.connect(foamBBp);foamBBp.connect(foamBLp);foamBLp.connect(foamBG);foamBG.connect(g);foamB.start();
+    // Wave envelope: build(6s) → crest(2s) → flow(3s) → retreat(7s) ≈ 18s
+    function scheduleWave(bG,bF,fG,delay){
       const now=Tone.now()+delay;
-      // Quiet baseline
-      bodyGn.gain.setValueAtTime(.15,now);
-      bodyFl.frequency.setValueAtTime(400,now);
-      foamGn.gain.setValueAtTime(0,now);
-      // Slow build: 0→6s
-      bodyGn.gain.linearRampToValueAtTime(.22,now+6);
-      bodyFl.frequency.linearRampToValueAtTime(700,now+6);
-      // Soft crest: 6→8s — gentle peak, touch of foam
-      bodyGn.gain.linearRampToValueAtTime(.25,now+8);
-      bodyFl.frequency.linearRampToValueAtTime(800,now+8);
-      foamGn.gain.linearRampToValueAtTime(.04,now+7);
-      // Flow: 8→11s — sustain gently
-      bodyGn.gain.linearRampToValueAtTime(.22,now+11);
-      bodyFl.frequency.linearRampToValueAtTime(650,now+11);
-      foamGn.gain.linearRampToValueAtTime(.02,now+11);
-      // Slow retreat: 11→18s — very gradual fade
-      bodyGn.gain.linearRampToValueAtTime(.15,now+18);
-      bodyFl.frequency.linearRampToValueAtTime(400,now+18);
-      foamGn.gain.linearRampToValueAtTime(0,now+18);
+      bG.gain.cancelScheduledValues(now);bF.frequency.cancelScheduledValues(now);fG.gain.cancelScheduledValues(now);
+      bG.gain.setValueAtTime(.17,now);bF.frequency.setValueAtTime(400,now);fG.gain.setValueAtTime(0,now);
+      bG.gain.linearRampToValueAtTime(.22,now+6);bF.frequency.linearRampToValueAtTime(650,now+6);
+      bG.gain.linearRampToValueAtTime(.24,now+8);bF.frequency.linearRampToValueAtTime(750,now+8);fG.gain.linearRampToValueAtTime(.03,now+7);
+      bG.gain.linearRampToValueAtTime(.21,now+11);bF.frequency.linearRampToValueAtTime(600,now+11);fG.gain.linearRampToValueAtTime(.015,now+11);
+      bG.gain.linearRampToValueAtTime(.17,now+18);bF.frequency.linearRampToValueAtTime(400,now+18);fG.gain.linearRampToValueAtTime(0,now+18);
     }
-
-    // Schedule repeating waves with slight variation
-    function loopWave(){
-      if(!playing){setTimeout(loopWave,200);return}
-      const cycle=17+Math.random()*3; // 17-20s per wave
-      scheduleWave(bodyG,bodyF,foamG,0);
-      setTimeout(()=>loopWave(),cycle*1000);
+    function loopA(){
+      if(!playing){setTimeout(loopA,200);return}
+      scheduleWave(bodyAG,bodyAF,foamAG,0);
+      setTimeout(loopA,(17+Math.random()*3)*1000);
     }
-    loopWave();
-    // Second wave offset for gentle overlap
-    function loopWave2(){
-      if(!playing){setTimeout(loopWave2,200);return}
-      const cycle=18+Math.random()*3;
-      scheduleWave(bodyG,bodyF,foamG,9);
-      setTimeout(()=>loopWave2(),cycle*1000);
+    loopA();
+    function loopB(){
+      if(!playing){setTimeout(loopB,200);return}
+      scheduleWave(bodyBG,bodyBF,foamBG,0);
+      setTimeout(loopB,(18+Math.random()*3)*1000);
     }
-    setTimeout(()=>loopWave2(),9000);
+    setTimeout(loopB,9000);
   }
   else if(k==="seagull"){
     // Distant seagull calls — sparse, airy sine chirps with long reverb
