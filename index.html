@@ -274,24 +274,24 @@ function ensureNode(k){
     // Layer 3: sub-bass (follows root notes)
     const subF=new Tone.Filter(120,"lowpass");subF.connect(g);
     const sub=new Tone.Synth({oscillator:{type:"sine"},envelope:{attack:.1,decay:.6,sustain:.4,release:1},volume:-16});sub.connect(subF);
-    // 32-chord chillhop progression with roots for sub-bass
+    // 32-chord bright major progression — no minor chords
     const ch=[
-      // A: Dm9 → G13 → Cmaj9 → Am7
-      {k:["D4","F4","A4","C5","E5"],r:"D2"},{k:["G3","B3","D4","F4","E4"],r:"G2"},{k:["C4","E4","G4","B4","D5"],r:"C2"},{k:["A3","C4","E4","G4","B4"],r:"A1"},
-      // Fm9 → Bb13 → Ebmaj9 → Cm7
-      {k:["F4","Ab4","C5","Eb5","G5"],r:"F2"},{k:["Bb3","D4","F4","Ab4","G4"],r:"Bb1"},{k:["Eb4","G4","Bb4","D5","F5"],r:"Eb2"},{k:["C4","Eb4","G4","Bb4"],r:"C2"},
-      // B: Em9 → A13 → Dmaj9 → Bm7
-      {k:["E4","G4","B4","D5","F#5"],r:"E2"},{k:["A3","C#4","E4","G4","F#4"],r:"A1"},{k:["D4","F#4","A4","C#5","E5"],r:"D2"},{k:["B3","D4","F#4","A4"],r:"B1"},
-      // Abmaj9 → Db9 → Gbmaj7 → Ebm7
-      {k:["Ab3","C4","Eb4","G4","Bb4"],r:"Ab1"},{k:["Db4","F4","Ab4","Cb5","Eb5"],r:"Db2"},{k:["Gb3","Bb3","Db4","F4"],r:"Gb1"},{k:["Eb4","Gb4","Bb4","Db5"],r:"Eb2"},
-      // C: Cm9 → F13 → Bbmaj9 → Gm7
-      {k:["C4","Eb4","G4","Bb4","D5"],r:"C2"},{k:["F3","A3","C4","Eb4","D4"],r:"F2"},{k:["Bb3","D4","F4","A4","C5"],r:"Bb1"},{k:["G3","Bb3","D4","F4"],r:"G2"},
-      // Am9 → D13 → Gmaj9 → Em7
-      {k:["A3","C4","E4","G4","B4"],r:"A1"},{k:["D4","F#4","A4","C5","B4"],r:"D2"},{k:["G3","B3","D4","F#4","A4"],r:"G2"},{k:["E3","G3","B3","D4"],r:"E2"},
-      // D: Bbm9 → Eb13 → Abmaj9 → Fm7
-      {k:["Bb3","Db4","F4","Ab4","C5"],r:"Bb1"},{k:["Eb3","G3","Bb3","Db4","C4"],r:"Eb2"},{k:["Ab3","C4","Eb4","G4","Bb4"],r:"Ab1"},{k:["F3","Ab3","C4","Eb4"],r:"F2"},
-      // Dm11 → G7#11 → Cmaj13 → Cmaj13 (home)
-      {k:["D4","F4","A4","C5","G5"],r:"D2"},{k:["G3","B3","D4","F#4","E4"],r:"G2"},{k:["C4","E4","G4","B4","A4"],r:"C2"},{k:["C4","E4","G4","B4","A4"],r:"C2"}
+      // A: Cmaj9 → Fmaj9 → Gmaj9 → C6/9
+      {k:["C4","E4","G4","B4","D5"],r:"C2"},{k:["F4","A4","C5","E5","G5"],r:"F2"},{k:["G3","B3","D4","F#4","A4"],r:"G2"},{k:["C4","E4","G4","A4","D5"],r:"C2"},
+      // Dmaj9 → Gmaj9 → Amaj7 → D6/9
+      {k:["D4","F#4","A4","C#5","E5"],r:"D2"},{k:["G3","B3","D4","F#4","A4"],r:"G2"},{k:["A3","C#4","E4","G#4","B4"],r:"A1"},{k:["D4","F#4","A4","B4","E5"],r:"D2"},
+      // B: Fmaj9 → Bbmaj9 → Cmaj9 → Fmaj7
+      {k:["F4","A4","C5","E5","G5"],r:"F2"},{k:["Bb3","D4","F4","A4","C5"],r:"Bb1"},{k:["C4","E4","G4","B4","D5"],r:"C2"},{k:["F3","A3","C4","E4"],r:"F2"},
+      // Abmaj9 → Dbmaj9 → Ebmaj9 → Abmaj7
+      {k:["Ab3","C4","Eb4","G4","Bb4"],r:"Ab1"},{k:["Db4","F4","Ab4","C5","Eb5"],r:"Db2"},{k:["Eb4","G4","Bb4","D5","F5"],r:"Eb2"},{k:["Ab3","C4","Eb4","G4"],r:"Ab1"},
+      // C: Gmaj9 → Cmaj9 → Dmaj9 → G6/9
+      {k:["G3","B3","D4","F#4","A4"],r:"G2"},{k:["C4","E4","G4","B4","D5"],r:"C2"},{k:["D4","F#4","A4","C#5","E5"],r:"D2"},{k:["G3","B3","D4","E4","A4"],r:"G2"},
+      // Ebmaj9 → Abmaj9 → Bbmaj9 → Ebmaj7
+      {k:["Eb4","G4","Bb4","D5","F5"],r:"Eb2"},{k:["Ab3","C4","Eb4","G4","Bb4"],r:"Ab1"},{k:["Bb3","D4","F4","A4","C5"],r:"Bb1"},{k:["Eb3","G3","Bb3","D4"],r:"Eb2"},
+      // D: Amaj9 → Dmaj9 → Emaj7 → A6/9
+      {k:["A3","C#4","E4","G#4","B4"],r:"A1"},{k:["D4","F#4","A4","C#5","E5"],r:"D2"},{k:["E4","G#4","B4","D#5"],r:"E2"},{k:["A3","C#4","E4","F#4","B4"],r:"A1"},
+      // Fmaj9 → Gmaj9 → Cmaj9 → Cmaj9 (home)
+      {k:["F4","A4","C5","E5","G5"],r:"F2"},{k:["G3","B3","D4","F#4","A4"],r:"G2"},{k:["C4","E4","G4","B4","D5"],r:"C2"},{k:["C4","E4","G4","B4","D5"],r:"C2"}
     ];
     let ci=0;
     Tone.getTransport().bpm.value=72;
